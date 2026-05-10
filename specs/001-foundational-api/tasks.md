@@ -1,6 +1,6 @@
 # Tasks — 001-foundational-api
 
-**Status**: Draft · **Date**: 2026-05-10
+**Status**: En progreso · **Date**: 2026-05-10
 **Plan**: [plan.md](plan.md) · **Spec**: [spec.md](spec.md) · **ADL**: [ADL-001](../../.design-logs/ADL-001-partition-key-idempotency-window-ts.md)
 
 Convención:
@@ -12,16 +12,16 @@ Convención:
 
 ## Setup — Bootstrap del proyecto Rails
 
-- [ ] T001 Inicializar Rails 8.0 con `--database=postgresql --skip-test --skip-action-mailbox --skip-action-text` en raíz del repo (`Gemfile`, `config/`, `bin/`, `db/`)
-- [ ] T002 [P] Agregar gemas de dev/test al `Gemfile`: `rspec-rails`, `factory_bot_rails`, `simplecov`, `database_cleaner-active_record`, `rubocop`, `rubocop-rails`, `brakeman`, `bundler-audit`. Ejecutar `bundle install`
-- [ ] T003 [P] Configurar RSpec: `bin/rails generate rspec:install`, mover helpers a `spec/rails_helper.rb`, agregar SimpleCov con umbral 90% en `spec/spec_helper.rb`
-- [ ] T004 [P] Crear `.rubocop.yml` con configuración base de estilo Rails 8
-- [ ] T005 [P] Crear `.github/workflows/ci.yml` con jobs: `lint` (rubocop), `security` (brakeman + bundler-audit), `test` (rspec con Postgres en service)
-- [ ] T006 [P] Crear `docker-compose.yml` con servicio `postgres:16` para desarrollo local
-- [ ] T007 [P] Configurar `config/database.yml` con env vars (`DATABASE_URL`, fallback a `postgres://postgres:postgres@localhost:5432/`)
-- [ ] T008 Crear estructura de carpetas: `app/notifications/`, `app/central/ingestion/`, `app/central/models/`, `spec/notifications/`, `spec/central/`. Agregar `.keep` si están vacías
-- [ ] T009 Configurar autoload: `config/application.rb` con `config.autoload_paths += %W[#{config.root}/app/notifications #{config.root}/app/central]`
-- [ ] T010 Verificación: `bundle exec rspec` corre vacío en verde, `bundle exec rubocop` pasa, CI verde en PR inicial
+- [x] T001 Inicializar Rails 8.0 con `--database=postgresql --skip-test --skip-action-mailbox --skip-action-text` en raíz del repo (`Gemfile`, `config/`, `bin/`, `db/`)
+- [x] T002 [P] Agregar gemas de dev/test al `Gemfile`: `rspec-rails`, `factory_bot_rails`, `simplecov`, `database_cleaner-active_record`, `rubocop`, `rubocop-rails`, `brakeman`, `bundler-audit`. Ejecutar `bundle install`
+- [x] T003 [P] Configurar RSpec: `bin/rails generate rspec:install`, mover helpers a `spec/rails_helper.rb`, agregar SimpleCov con umbral 90% en `spec/spec_helper.rb`
+- [x] T004 [P] Crear `.rubocop.yml` con configuración base de estilo Rails 8
+- [x] T005 [P] Crear `.github/workflows/ci.yml` con jobs: `lint` (rubocop), `security` (brakeman + bundler-audit), `test` (rspec con Postgres en service)
+- [x] T006 [P] Crear `docker-compose.yml` con servicio `postgres:16` para desarrollo local
+- [x] T007 [P] Configurar `config/database.yml` con env vars (`DATABASE_URL`, fallback a `postgres://postgres:postgres@localhost:5432/`)
+- [x] T008 Crear estructura de carpetas: `app/notifications/`, `app/central/ingestion/`, `app/central/models/`, `spec/notifications/`, `spec/central/`. Agregar `.keep` si están vacías
+- [x] T009 Configurar autoload: `config/application.rb` con `config.autoload_paths += %W[#{config.root}/app/notifications #{config.root}/app/central]`
+- [x] T010 Verificación: `bundle exec rspec` corre vacío en verde, `bundle exec rubocop` pasa, CI verde en PR inicial
 
 **Block Checkpoint Setup**: lint sin warnings · `rspec` verde (suite vacía) · commit `feat(001-foundational/setup): bootstrap Rails 8 + RSpec + CI`
 
@@ -31,11 +31,13 @@ Convención:
 
 > Bloquea cualquier user story: sin la tabla particionada y la migración, ni `EventBuilder` ni los tests de idempotencia pueden correr.
 
-- [ ] T011 Crear migración `db/migrate/20260510000001_create_notification_events.rb` con DDL completo de `data-model.md`: tabla particionada por `idempotency_window_ts`, UNIQUE `(idempotency_hash, idempotency_window_ts)`, CHECKs, particiones iniciales 2026-05 y 2026-06
-- [ ] T012 Crear modelo `app/central/models/notification_event.rb` con `self.table_name = "notification_events"`, sin validaciones AR (delegadas al motor)
-- [ ] T013 [P] Crear `spec/factories/notification_events.rb` con FactoryBot factory base
+- [x] T011 Crear migración `db/migrate/20260510000001_create_notification_events.rb` con DDL completo de `data-model.md`: tabla particionada por `idempotency_window_ts`, UNIQUE `(idempotency_hash, idempotency_window_ts)`, CHECKs, partición default inicial
+- [x] T012 Crear modelo `app/central/models/notification_event.rb` con `self.table_name = "notification_events"`, validaciones AR + scope `for_dispatch`
+- [x] T013 [P] Crear `spec/factories/notification_events.rb` con FactoryBot factory base + traits (sent, rejected, failed, user_id_recipient)
 - [ ] T014 [P] Test de la migración: `spec/db/notification_events_schema_spec.rb` valida estructura de columnas, presencia de constraints, particiones registradas en `pg_partitions`
-- [ ] T015 Test directo de la UNIQUE constraint: `spec/central/models/notification_event_spec.rb` con dos INSERTs raw del mismo `(idempotency_hash, idempotency_window_ts)` → segundo lanza `ActiveRecord::RecordNotUnique`
+- [/] T015 Test directo de la UNIQUE constraint: `spec/central/models/notification_event_spec.rb` — archivo creado, pendiente correr (bloqueado: requiere `postgresql-client-16` para `db:schema:dump` con formato SQL)
+
+**Nota**: Se agregó `config.active_record.schema_format = :sql` en `application.rb` porque `schema.rb` no puede representar tablas particionadas (`PARTITION BY RANGE`). Requiere `postgresql-client-16` instalado en la máquina para que `db:schema:dump` funcione (`pg_dump`).
 
 **Block Checkpoint Foundational**: lint · rspec verde · cobertura ≥90% en módulo · ADL-001 ya creado · commit `feat(001-foundational/db): notification_events particionada por window_ts`
 

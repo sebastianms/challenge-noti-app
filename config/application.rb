@@ -40,5 +40,8 @@ module ChallengeNotiApp
 
     config.time_zone = "UTC"
     config.generators.system_tests = nil
+
+    # Postgres partitioned tables require SQL format (schema.rb can't represent PARTITION BY RANGE)
+    config.active_record.schema_format = :sql
   end
 end
