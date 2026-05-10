@@ -29,3 +29,15 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+# Bundled gems (run `bundle install` locally)
+/vendor/
+
+# Test coverage reports
+/coverage
+
+# Kamal secrets
+/.kamal/secrets
+
+# Encrypted credentials (generated per-environment)
+/config/credentials.yml.enc
+
