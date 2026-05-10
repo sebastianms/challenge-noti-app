@@ -11,8 +11,8 @@ Cada fase es un **shippable slice**: deja la plataforma en un estado funcional y
 - [x] `specs/mission.md`
 - [x] `specs/tech-stack.md`
 - [x] `specs/roadmap.md`
-- [ ] Bootstrap del proyecto Rails 8 + Postgres + RSpec + RuboCop + GitHub Actions
-- [ ] Esqueleto de carpetas (`app/notifications`, `app/central/...`, `app/admin`)
+- [x] Bootstrap del proyecto Rails 8.1 + Postgres 17 + RSpec + RuboCop + GitHub Actions
+- [x] Esqueleto de carpetas (`app/notifications`, `app/central/...`, `app/admin`)
 
 **DoD**: `bundle exec rspec` corre vacío en verde, CI verde en PR inicial.
 
@@ -22,7 +22,7 @@ Cada fase es un **shippable slice**: deja la plataforma en un estado funcional y
 
 > Sin esta capa nada más se sostiene: define el contrato público y garantiza que ningún evento duplicado avance.
 
-- [ ] Tabla `notification_events` (con particionamiento mensual por `created_at`)
+- [x] Tabla `notification_events` (particionamiento por `idempotency_window_ts`, ver ADL-001 y ADL-002)
 - [ ] `AbstractNotification` con `title`, `body`, `digest_template`, `send`
 - [ ] `Central::Ingestion::EventBuilder` + cálculo de `idempotency_hash` (SHA256, ventana de tiempo configurable)
 - [ ] `INSERT … ON CONFLICT DO NOTHING` y resultado tipado (`:created` / `:duplicate`)
