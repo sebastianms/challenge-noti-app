@@ -27,7 +27,7 @@ jobs:
       DATABASE_URL_TEST: postgres://postgres:postgres@localhost:5432/challenge_noti_app_test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
