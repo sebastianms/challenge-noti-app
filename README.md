@@ -232,6 +232,49 @@ Variable requerida:
 |----------|-------------|
 | `SENDGRID_WEBHOOK_PUBLIC_KEY` | Llave pública Ed25519 en Base64 (panel SendGrid → Mail Settings → Event Webhook) |
 
+## Blacklist y opt-outs
+
+Tabla `notification_blacklist` con tres dimensiones (`scope`): `global`, `type` o `channel`. El `BlacklistEvaluator` se ejecuta antes del motor de reglas; si matchea, el evento queda auditado como `filtered` con `reason=blacklisted` y nunca llega a `dispatch_queue`.
+
+### Alta manual desde consola
+
+```ruby
+NotificationBlacklist.create!(
+  recipient_canonical: "user@example.com",
+  scope:               "global",   # o "type" / "channel"
+  target:              nil,        # "birthday" para scope=type; "email" para scope=channel
+  source:              "manual",
+  reason:              "ticket #42"
+)
+```
+
+| Campo | Valores | Descripción |
+|-------|---------|-------------|
+| `scope` | `global` / `type` / `channel` | Dimensión del bloqueo |
+| `target` | `NULL` (si global), notification_type, o nombre de canal | Concreta el scope |
+| `source` | `manual` / `admin_ui` / `hard_bounce` / `dropped` / `spamreport` | Trazabilidad de origen |
+| `reason` | texto libre | Justificación; los webhooks embeben `sg_event_id` |
+
+UNIQUE `(recipient_canonical, scope, target) NULLS NOT DISTINCT` garantiza idempotencia.
+
+### Auto-blacklist desde webhook SendGrid
+
+`SendgridEventProcessor` inserta en `notification_blacklist` en la misma transacción que el audit cuando recibe:
+- `bounce` con `type=bounce` → `source=hard_bounce`
+- `dropped` → `source=dropped`
+- `spamreport` → `source=spamreport`
+
+Soft bounces (`type=blocked`) y `deferred` solo generan audit, no bloquean.
+
+### UI admin
+
+`/admin/blacklist` (HTTP Basic auth, mismas envvars que `/admin/audits`):
+- Listado paginado con filtros por `recipient`, `scope`, `target`, `source`.
+- Alta manual (form) — registra con `source=admin_ui`.
+- Remoción (`DELETE`) — atómica: crea audit `blacklist_removed` con `notification_type=_blacklist_removed_` y `metadata = {blacklist_id, scope, target, removed_by, reason}` antes de borrar.
+
+Ver `.design-logs/ADL-010-blacklist-pre-rules-evaluation.md` para el rationale completo.
+
 ## Tareas Rake
 
 | Comando | Descripción |

@@ -229,23 +229,28 @@ Las siguientes son las situaciones que más nos enseñaron sobre el proceso y el
 
 **6. Replanning detecta un nombre de carpeta inconsistente.** Al cerrar feature 004 corrimos una auditoría cross-feature. Detectó que parte de la documentación interna hablaba de `app/central/auditing/` cuando el código real vive en `app/central/audit/` (singular). No lo marcamos como error de implementación: el código es la fuente de verdad, lo que actualizamos fueron las notas de referencia. Lección: Replanning no es para reescribir código, es para reconciliar especificaciones con realidad.
 
-**7. ADLs como memoria de decisiones.** Acumulamos nueve Architectural Decision Logs (`ADL-001` a `ADL-009` en `.design-logs/`, con `ADL-010` en feature 005). Los que más volvimos a consultar fueron ADL-005 (`SKIP LOCKED` como mecanismo de claiming, que terminamos reusando tres veces: worker de email, worker de webhook, scheduler de digests) y ADL-001 (elección de la clave de particionamiento por ventana de idempotencia). Lección: un ADL bien escrito nos ahorró horas de debate semanas después; el costo de escribirlo es de 10 minutos.
+**7. ADLs como memoria de decisiones.** Acumulamos diez Architectural Decision Logs (`ADL-001` a `ADL-010` en `.design-logs/`). Los que más volvimos a consultar fueron ADL-005 (`SKIP LOCKED` como mecanismo de claiming, que terminamos reusando tres veces: worker de email, worker de webhook, scheduler de digests) y ADL-001 (elección de la clave de particionamiento por ventana de idempotencia). Lección: un ADL bien escrito nos ahorró horas de debate semanas después; el costo de escribirlo es de 10 minutos.
+
+**8. UNIQUE con `NULLS NOT DISTINCT` para idempotencia de blacklist (feature 005).** Cuando el webhook de SendGrid procesa un hard bounce, necesitábamos que un segundo evento idéntico no duplicara la fila. La trampa: una blacklist `scope=global` tiene `target IS NULL`, y por default Postgres trata `NULL ≠ NULL` en índices únicos, así que dos filas `(recipient, global, NULL)` para el mismo destinatario serían aceptadas. Solución: PG 15+ permite `CREATE UNIQUE INDEX ... NULLS NOT DISTINCT`, lo que trata `NULL` como un valor más a efectos de unicidad. Combinado con `insert_all(..., unique_by: :idx_blacklist_unique)` da `ON CONFLICT DO NOTHING` idempotente. Lección: features modernas de Postgres a veces resuelven en una línea lo que en aplicación tomaría 20.
+
+**9. Benchmark de SC-005 mejor de lo proyectado (feature 005).** El spec exigía que `BlacklistEvaluator.match` tuviera p95 ≤ 5 ms con 100 000 filas. La query única con OR sobre `(recipient_canonical, scope, target)` + `LIMIT 1` resultó dar **p95 = 1.4 ms y avg = 0.87 ms** — casi 4× mejor que el target. El índice `idx_blacklist_lookup` se aprovecha incluso con la condición OR porque la cardinalidad por destinatario es bajísima (1-3 filas típicamente). Lección: a veces lo que parece "una pre-optimización innecesaria" (definir el target de performance en spec, no después) es justamente lo que te permite verificar que el diseño no degrada bajo carga real.
 
 ## **A.5. Métricas del proceso**
 
-Al cerrar feature 004 (Phase 5 del roadmap):
+Al cerrar feature 005 (Phase 6 del roadmap, último P1 del MVP):
 
 | Métrica | Valor |
 | :---- | :---- |
-| Features completadas | 4 (001, 002, 003, 004) + 005 en progreso |
-| Tasks ejecutadas | 166 sobre 166 (39 + 36 + 46 + 45) |
+| Features completadas | 5 (001, 002, 003, 004, 005) — MVP cerrado |
+| Tasks ejecutadas | 206 sobre 206 (39 + 36 + 46 + 45 + 40) |
 | Specs en `specs/` | 5 features × (spec + plan + research + data-model + contracts + quickstart + tasks) ≈ 35 documentos |
-| ADLs documentados | 9 (de baja velocidad de cambio: ~2 por feature) |
-| Tests RSpec | 293 ejemplos · 100% de líneas (482/482) |
-| Lint warnings | 0 en 124 archivos Ruby |
+| ADLs documentados | 10 (de baja velocidad de cambio: ~2 por feature) |
+| Tests RSpec | 335 ejemplos · 100% de líneas (571/571) |
+| Lint warnings | 0 en 135 archivos Ruby |
 | Brakeman + bundler-audit | 0 issues |
-| Commits | ~50, agrupados por bloque y feature |
-| Tiempo aproximado | 4 sesiones de trabajo intensivo, sin retrabajo significativo |
+| Benchmark SC-005 | p95 = 1.4 ms con 100 000 filas (target ≤ 5 ms) |
+| Commits | ~60, agrupados por bloque y feature |
+| Tiempo aproximado | 5 sesiones de trabajo intensivo, sin retrabajo significativo |
 
 La métrica más relevante para SDD no es ninguna de esas: es **cero retrabajo de spec**. Ningún `spec.md` lo reescribimos tras empezar a implementar. Las clarificaciones las atajamos en la fase Clarify; los trade-offs no obvios los dejamos como ADL. Los bugs que encontramos durante implementación fueron de código, no de diseño.
 
@@ -262,5 +267,5 @@ SDD no nos eliminó la complejidad — la **trasladó hacia adelante**, al momen
 
 Vale la pena cerrar con una reflexión sobre la colaboración con IA: el asistente no reemplazó mi rol de arquitecto ni de decisor, lo **amplificó**. La velocidad para producir specs detallados, ejecutar tests, leer y modificar muchos archivos a la vez, y mantener la disciplina del Block Checkpoint sin saltearse pasos fue mucho mayor que la que hubiera tenido trabajando solo. Pero las decisiones que importan — qué priorizar, qué trade-off aceptar, cuándo replanificar — siguieron siendo mías. La IA propone, el humano dispone. Esa división de roles fue lo que mantuvo la coherencia del proyecto a lo largo de cinco features.
 
-La aplicación está terminada **en su comportamiento mínimo viable** (Parte 1 + Parte 2 del enunciado, con la phase de blacklist en construcción al momento de redacción de este anexo). Las phases siguientes del roadmap (UI Admin completa, observabilidad, hardening) son evolución natural sobre la misma base, sin reescritura.
+La aplicación está **terminada en su comportamiento mínimo viable** (Parte 1 + Parte 2 del enunciado): las cinco features del MVP — API de notificaciones, dispatch por email, auditoría consultable, motor de reglas configurable y blacklist + bounces automáticos — están cerradas con sus respectivos DoD verificados, 335 tests verdes y cobertura del 100%. Las phases siguientes del roadmap (UI Admin completa para reglas y blacklist, dashboard de métricas, observabilidad, hardening de performance) son evolución natural sobre la misma base, sin reescritura.
 

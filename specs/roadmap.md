@@ -85,17 +85,17 @@ Implementado en feature [004-rules-engine](004-rules-engine/):
 
 ---
 
-## Phase 6 — User Story 4: Blacklist + bounces (R8)
+## Phase 6 — User Story 4: Blacklist + bounces (R8)  `[DONE]`
 
 > Compliance y soporte controlan opt-outs; los hard bounces no reintentan eternamente.
 
-- [ ] Tabla `notification_blacklist` (`scope`, `target`, `recipient_id`, `reason`, `source`)
-- [ ] `Central::Decisioning::BlacklistEvaluator` (consulta antes de evaluar reglas)
-- [ ] `Webhooks::SendgridBouncesController` con validación HMAC
-- [ ] Hard bounce → INSERT en blacklist con `source=hard_bounce`
-- [ ] CRUD básico de blacklist (consola + endpoints internos)
+- [x] Tabla `notification_blacklist` (`scope`, `target`, `recipient_canonical`, `reason`, `source`) con CHECK + UNIQUE NULLS NOT DISTINCT
+- [x] `BlacklistEvaluator` con query única OR + LIMIT 1; integración pre-reglas en `EventBuilder`
+- [x] `SendgridEventProcessor` extendido: hard bounce / dropped / spamreport → INSERT en blacklist en la misma transacción que el audit (idempotente via `insert_all` ON CONFLICT)
+- [x] UI `/admin/blacklist` (HTTP Basic) con index filtrado, alta manual y remoción auditada (`blacklist_removed`)
+- [x] ADL-010 — evaluación pre-reglas + transaccionalidad del webhook
 
-**DoD**: destinatario en blacklist nunca recibe envíos del scope bloqueado; auditado con motivo `blacklisted`; un hard bounce de Sendgrid se refleja en blacklist en < 30 s.
+**DoD ✅**: destinatario en blacklist nunca recibe envíos del scope bloqueado; auditado con motivo `blacklisted`; un hard bounce de Sendgrid se refleja en blacklist en < 30 s. Cobertura 100% en módulos nuevos, suite 335/335.
 
 ---
 

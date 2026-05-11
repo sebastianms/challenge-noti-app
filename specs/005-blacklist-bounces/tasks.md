@@ -1,7 +1,7 @@
 # Tasks — 005-blacklist-bounces
 
 **Feature**: Blacklist + bounces automáticos
-**Status**: pendiente · **Total**: 40 tareas
+**Status**: DONE · **Total**: 40 tareas
 
 Convenciones:
 - `[P]` = paralelizable (archivos distintos, sin dependencia inmediata)
@@ -89,12 +89,12 @@ Convenciones:
 
 ## Polish
 
-- [ ] T035 [P] Crear `.design-logs/ADL-010-blacklist-pre-rules-evaluation.md`: contexto (compliance no negociable), decisión (evaluación antes de RulesEngine), alternativas (rama dentro de reglas, hook post-encolado), consecuencias positivas/negativas, referencias a R1/R3/R5
-- [ ] T036 [P] Actualizar `README.md`: sección "Blacklist y opt-outs" con ejemplo consola (`NotificationBlacklist.create!`), tabla de fields, link a `/admin/blacklist`, breve nota sobre auto-blacklist desde webhook
-- [ ] T037 [P] Actualizar `specs/roadmap.md`: marcar Phase 6 como `[DONE]` con bullets de implementación y link a ADL-010
-- [ ] T038 Smoke test: `bundle exec rubocop` (0 offenses) + `bundle exec rspec` (suite completa verde, cobertura ≥95% en módulos nuevos) + `bundle exec brakeman --no-pager` (0 warnings) + `bundle exec bundler-audit` (clean)
-- [ ] T039 Benchmark p95 del `BlacklistEvaluator` (script de quickstart.md): seedear 100k filas, medir 1000 lookups, verificar p95 ≤ 5 ms (SC-005). Si falla → ajustar índice o query
-- [ ] T040 Marcar todas las tareas como `[x]` en este archivo, commit `chore(005-blacklist-bounces/polish): ADL-010, README, roadmap, smoke + benchmark` y push
+- [x] T035 [P] Crear `.design-logs/ADL-010-blacklist-pre-rules-evaluation.md`: contexto (compliance no negociable), decisión (evaluación antes de RulesEngine), alternativas (rama dentro de reglas, hook post-encolado), consecuencias positivas/negativas, referencias a R1/R3/R5
+- [x] T036 [P] Actualizar `README.md`: sección "Blacklist y opt-outs" con ejemplo consola (`NotificationBlacklist.create!`), tabla de fields, link a `/admin/blacklist`, breve nota sobre auto-blacklist desde webhook
+- [x] T037 [P] Actualizar `specs/roadmap.md`: marcar Phase 6 como `[DONE]` con bullets de implementación y link a ADL-010
+- [x] T038 Smoke test: `bundle exec rubocop` (0 offenses) + `bundle exec rspec` (suite completa verde, cobertura ≥95% en módulos nuevos) + `bundle exec brakeman --no-pager` (0 warnings) + `bundle exec bundler-audit` (clean)
+- [x] T039 Benchmark p95 del `BlacklistEvaluator` (script de quickstart.md): seedear 100k filas, medir 1000 lookups, verificar p95 ≤ 5 ms (SC-005). Si falla → ajustar índice o query
+- [x] T040 Marcar todas las tareas como `[x]` en este archivo, commit `chore(005-blacklist-bounces/polish): ADL-010, README, roadmap, smoke + benchmark` y push
 
 **Block Checkpoint Polish**: smoke completo verde · benchmark p95 ≤ 5 ms · commit + push final
 
