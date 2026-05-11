@@ -78,7 +78,11 @@ CREATE TABLE public.notification_audit (
     rule_snapshot jsonb,
     payload jsonb,
     metadata jsonb,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    recipient_canonical text,
+    source text DEFAULT 'internal'::text NOT NULL,
+    notification_type text,
+    CONSTRAINT notification_audit_source_check CHECK ((source = ANY (ARRAY['internal'::text, 'sendgrid_webhook'::text])))
 )
 PARTITION BY RANGE (created_at);
 
@@ -115,8 +119,49 @@ CREATE TABLE public.notification_audit_2026_05 (
     rule_snapshot jsonb,
     payload jsonb,
     metadata jsonb,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    recipient_canonical text,
+    source text DEFAULT 'internal'::text NOT NULL,
+    notification_type text,
+    CONSTRAINT notification_audit_source_check CHECK ((source = ANY (ARRAY['internal'::text, 'sendgrid_webhook'::text])))
 );
+
+
+--
+-- Name: notification_blacklist; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_blacklist (
+    id bigint NOT NULL,
+    recipient_canonical character varying(320) NOT NULL,
+    scope character varying(16) NOT NULL,
+    target character varying(64),
+    source character varying(32) NOT NULL,
+    reason text,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT blacklist_scope_target_chk CHECK (((((scope)::text = 'global'::text) AND (target IS NULL)) OR (((scope)::text = ANY ((ARRAY['type'::character varying, 'channel'::character varying])::text[])) AND (target IS NOT NULL)))),
+    CONSTRAINT blacklist_scope_values_chk CHECK (((scope)::text = ANY ((ARRAY['global'::character varying, 'type'::character varying, 'channel'::character varying])::text[]))),
+    CONSTRAINT blacklist_source_values_chk CHECK (((source)::text = ANY ((ARRAY['manual'::character varying, 'admin_ui'::character varying, 'hard_bounce'::character varying, 'dropped'::character varying, 'spamreport'::character varying])::text[])))
+);
+
+
+--
+-- Name: notification_blacklist_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notification_blacklist_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_blacklist_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notification_blacklist_id_seq OWNED BY public.notification_blacklist.id;
 
 
 --
@@ -182,12 +227,132 @@ CREATE TABLE public.notification_events_default (
 
 
 --
+-- Name: notification_rules; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_rules (
+    id bigint NOT NULL,
+    notification_type text NOT NULL,
+    channels text[],
+    max_per_day integer,
+    cooldown_seconds integer,
+    digest_window_seconds integer,
+    priority text,
+    enabled boolean DEFAULT true NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT notification_rules_cooldown_positive CHECK (((cooldown_seconds IS NULL) OR (cooldown_seconds > 0))),
+    CONSTRAINT notification_rules_digest_positive CHECK (((digest_window_seconds IS NULL) OR (digest_window_seconds > 0))),
+    CONSTRAINT notification_rules_max_per_day_positive CHECK (((max_per_day IS NULL) OR (max_per_day > 0))),
+    CONSTRAINT notification_rules_priority_check CHECK (((priority IS NULL) OR (priority = ANY (ARRAY['critical'::text, 'standard'::text, 'bulk'::text]))))
+);
+
+
+--
+-- Name: notification_rules_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notification_rules_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_rules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notification_rules_id_seq OWNED BY public.notification_rules.id;
+
+
+--
+-- Name: pending_digests; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.pending_digests (
+    id bigint NOT NULL,
+    notification_type text NOT NULL,
+    recipient_canonical text NOT NULL,
+    correlation_id uuid NOT NULL,
+    event_id bigint NOT NULL,
+    payload jsonb NOT NULL,
+    rule_snapshot jsonb NOT NULL,
+    dispatch_at timestamp with time zone NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    consolidated_into uuid,
+    locked_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT pending_digests_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'consolidating'::text, 'consolidated'::text, 'orphaned'::text])))
+);
+
+
+--
+-- Name: pending_digests_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.pending_digests_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: pending_digests_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.pending_digests_id_seq OWNED BY public.pending_digests.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.schema_migrations (
     version character varying NOT NULL
 );
+
+
+--
+-- Name: webhook_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.webhook_events (
+    id bigint NOT NULL,
+    source text DEFAULT 'sendgrid'::text NOT NULL,
+    payload jsonb NOT NULL,
+    signature text NOT NULL,
+    signature_ts text NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    received_at timestamp with time zone DEFAULT now() NOT NULL,
+    locked_at timestamp with time zone,
+    processed_at timestamp with time zone,
+    failed_reason text,
+    attempts integer DEFAULT 0 NOT NULL,
+    CONSTRAINT webhook_events_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'processing'::text, 'processed'::text, 'failed'::text])))
+);
+
+
+--
+-- Name: webhook_events_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.webhook_events_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: webhook_events_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.webhook_events_id_seq OWNED BY public.webhook_events.id;
 
 
 --
@@ -219,10 +384,38 @@ ALTER TABLE ONLY public.notification_audit ALTER COLUMN id SET DEFAULT nextval('
 
 
 --
+-- Name: notification_blacklist id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_blacklist ALTER COLUMN id SET DEFAULT nextval('public.notification_blacklist_id_seq'::regclass);
+
+
+--
 -- Name: notification_events id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notification_events ALTER COLUMN id SET DEFAULT nextval('public.notification_events_id_seq'::regclass);
+
+
+--
+-- Name: notification_rules id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_rules ALTER COLUMN id SET DEFAULT nextval('public.notification_rules_id_seq'::regclass);
+
+
+--
+-- Name: pending_digests id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pending_digests ALTER COLUMN id SET DEFAULT nextval('public.pending_digests_id_seq'::regclass);
+
+
+--
+-- Name: webhook_events id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.webhook_events ALTER COLUMN id SET DEFAULT nextval('public.webhook_events_id_seq'::regclass);
 
 
 --
@@ -255,6 +448,14 @@ ALTER TABLE ONLY public.notification_audit
 
 ALTER TABLE ONLY public.notification_audit_2026_05
     ADD CONSTRAINT notification_audit_2026_05_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: notification_blacklist notification_blacklist_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_blacklist
+    ADD CONSTRAINT notification_blacklist_pkey PRIMARY KEY (id);
 
 
 --
@@ -306,11 +507,64 @@ ALTER TABLE ONLY public.notification_events_default
 
 
 --
+-- Name: notification_rules notification_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_rules
+    ADD CONSTRAINT notification_rules_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notification_rules notification_rules_type_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_rules
+    ADD CONSTRAINT notification_rules_type_unique UNIQUE (notification_type);
+
+
+--
+-- Name: pending_digests pending_digests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.pending_digests
+    ADD CONSTRAINT pending_digests_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.schema_migrations
     ADD CONSTRAINT schema_migrations_pkey PRIMARY KEY (version);
+
+
+--
+-- Name: webhook_events webhook_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.webhook_events
+    ADD CONSTRAINT webhook_events_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_blacklist_lookup; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blacklist_lookup ON public.notification_blacklist USING btree (recipient_canonical, scope);
+
+
+--
+-- Name: idx_blacklist_source_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_blacklist_source_created ON public.notification_blacklist USING btree (source, created_at DESC);
+
+
+--
+-- Name: idx_blacklist_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_blacklist_unique ON public.notification_blacklist USING btree (recipient_canonical, scope, target) NULLS NOT DISTINCT;
 
 
 --
@@ -377,6 +631,20 @@ CREATE INDEX notification_audit_2026_05_metadata_idx ON public.notification_audi
 
 
 --
+-- Name: notification_audit_rate_limit_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_rate_limit_idx ON ONLY public.notification_audit USING btree (notification_type, recipient_canonical, created_at) WHERE ((notification_type IS NOT NULL) AND (recipient_canonical IS NOT NULL));
+
+
+--
+-- Name: notification_audit_2026_05_notification_type_recipient_cano_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_2026_05_notification_type_recipient_cano_idx ON public.notification_audit_2026_05 USING btree (notification_type, recipient_canonical, created_at) WHERE ((notification_type IS NOT NULL) AND (recipient_canonical IS NOT NULL));
+
+
+--
 -- Name: notification_audit_payload_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -388,6 +656,34 @@ CREATE INDEX notification_audit_payload_idx ON ONLY public.notification_audit US
 --
 
 CREATE INDEX notification_audit_2026_05_payload_idx ON public.notification_audit_2026_05 USING gin (payload);
+
+
+--
+-- Name: notification_audit_recipient_canonical_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_recipient_canonical_idx ON ONLY public.notification_audit USING btree (recipient_canonical) WHERE (recipient_canonical IS NOT NULL);
+
+
+--
+-- Name: notification_audit_2026_05_recipient_canonical_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_2026_05_recipient_canonical_idx ON public.notification_audit_2026_05 USING btree (recipient_canonical) WHERE (recipient_canonical IS NOT NULL);
+
+
+--
+-- Name: notification_audit_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_status_created_at_idx ON ONLY public.notification_audit USING btree (status, created_at);
+
+
+--
+-- Name: notification_audit_2026_05_status_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_2026_05_status_created_at_idx ON public.notification_audit_2026_05 USING btree (status, created_at);
 
 
 --
@@ -419,6 +715,34 @@ CREATE INDEX notification_events_default_status_created_at_idx ON public.notific
 
 
 --
+-- Name: notification_rules_enabled_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_rules_enabled_idx ON public.notification_rules USING btree (notification_type) WHERE (enabled = true);
+
+
+--
+-- Name: pending_digests_dispatch_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX pending_digests_dispatch_at_idx ON public.pending_digests USING btree (dispatch_at) WHERE (status = 'pending'::text);
+
+
+--
+-- Name: pending_digests_group_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX pending_digests_group_idx ON public.pending_digests USING btree (notification_type, recipient_canonical, status);
+
+
+--
+-- Name: webhook_events_pending_processing_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX webhook_events_pending_processing_idx ON public.webhook_events USING btree (status, received_at) WHERE (status = ANY (ARRAY['pending'::text, 'processing'::text]));
+
+
+--
 -- Name: notification_audit_2026_05_correlation_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -433,6 +757,13 @@ ALTER INDEX public.notification_audit_metadata_idx ATTACH PARTITION public.notif
 
 
 --
+-- Name: notification_audit_2026_05_notification_type_recipient_cano_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.notification_audit_rate_limit_idx ATTACH PARTITION public.notification_audit_2026_05_notification_type_recipient_cano_idx;
+
+
+--
 -- Name: notification_audit_2026_05_payload_idx; Type: INDEX ATTACH; Schema: public; Owner: -
 --
 
@@ -444,6 +775,20 @@ ALTER INDEX public.notification_audit_payload_idx ATTACH PARTITION public.notifi
 --
 
 ALTER INDEX public.notification_audit_pkey ATTACH PARTITION public.notification_audit_2026_05_pkey;
+
+
+--
+-- Name: notification_audit_2026_05_recipient_canonical_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.notification_audit_recipient_canonical_idx ATTACH PARTITION public.notification_audit_2026_05_recipient_canonical_idx;
+
+
+--
+-- Name: notification_audit_2026_05_status_created_at_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.notification_audit_status_created_at_idx ATTACH PARTITION public.notification_audit_2026_05_status_created_at_idx;
 
 
 --
@@ -502,6 +847,12 @@ ALTER INDEX public.idx_notification_events_status_created_at ATTACH PARTITION pu
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260512170000'),
+('20260512000003'),
+('20260512000002'),
+('20260512000001'),
+('20260511000002'),
+('20260511000001'),
 ('20260510000003'),
 ('20260510000002'),
 ('20260510000001');
