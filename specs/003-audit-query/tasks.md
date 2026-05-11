@@ -12,10 +12,10 @@ Convención:
 
 ## Setup — Dependencias y rutas
 
-- [ ] T001 Agregar `gem "ed25519", "~> 1.3"` al `Gemfile` (grupo principal) y ejecutar `bundle install`
-- [ ] T002 [P] Agregar al `config/routes.rb`: `namespace :webhooks do post "sendgrid", to: "sendgrid_events#create" end` y `namespace :admin do resources :audits, only: [:index] end`
-- [ ] T003 [P] Documentar nuevas env vars en `.env.example`: `SENDGRID_WEBHOOK_PUBLIC_KEY`, `AUDIT_BASIC_AUTH_USER`, `AUDIT_BASIC_AUTH_PASSWORD`, `AUDIT_RETENTION_MONTHS`
-- [ ] T004 [P] Crear estructura de carpetas: `app/central/webhooks/`, `app/controllers/webhooks/`, `app/controllers/admin/`, `app/views/admin/audits/`, `spec/central/webhooks/`, `spec/controllers/webhooks/`, `spec/controllers/admin/`
+- [x] T001 Agregar `gem "ed25519", "~> 1.3"` al `Gemfile` (grupo principal) y ejecutar `bundle install`
+- [x] T002 [P] Agregar al `config/routes.rb`: `namespace :webhooks do post "sendgrid", to: "sendgrid_events#create" end` y `namespace :admin do resources :audits, only: [:index] end`
+- [x] T003 [P] Documentar nuevas env vars en `.env.example`: `SENDGRID_WEBHOOK_PUBLIC_KEY`, `AUDIT_BASIC_AUTH_USER`, `AUDIT_BASIC_AUTH_PASSWORD`, `AUDIT_RETENTION_MONTHS`
+- [x] T004 [P] Crear estructura de carpetas: `app/central/webhooks/`, `app/controllers/webhooks/`, `app/controllers/admin/`, `app/views/admin/audits/`, `spec/central/webhooks/`, `spec/controllers/webhooks/`, `spec/controllers/admin/`
 
 **Block Checkpoint Setup**: `rubocop` sin warnings · `rspec` verde · commit `feat(003-audit/setup): gem ed25519 + rutas + env vars`
 
