@@ -26,6 +26,9 @@ RSpec.configure do |config|
   config.infer_spec_type_from_file_location!
 
   config.before(:suite) do
+    # Eager-load all app code so self-registering initializers (e.g. ChannelRegistry)
+    # run regardless of which spec files are included in the run.
+    Rails.application.eager_load!
     DatabaseCleaner.strategy = :transaction
     DatabaseCleaner.clean_with(:truncation)
   end
