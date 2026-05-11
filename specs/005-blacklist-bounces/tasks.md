@@ -71,17 +71,17 @@ Convenciones:
 
 > Soporte abre `/admin/blacklist`, filtra, remueve con motivo. Audit `blacklist_removed` queda registrado.
 
-- [ ] T024 [US3] Crear controller `app/controllers/admin/blacklist_controller.rb` con `index`, `create`, `destroy`. HTTP Basic con mismas envvars que `/admin/audits` (refactor a concern si conviene)
-- [ ] T025 [US3] Agregar rutas en `config/routes.rb`: `resources :blacklist, only: [:index, :create, :destroy], controller: "admin/blacklist"` bajo namespace `:admin`
-- [ ] T026 [US3] Vista `app/views/admin/blacklist/index.html.erb` con form de filtros (`recipient`, `scope`, `target`, `source`) + tabla + paginación (cap 50). Reutilizar estilos de `/admin/audits`
-- [ ] T027 [P] [US3] Partial `app/views/admin/blacklist/_row.html.erb`: una fila con columnas `recipient_canonical`, `scope`, `target`, `source`, `reason` truncado, `created_at`, botón "Remover" (form POST con `_method=delete`)
-- [ ] T028 [P] [US3] Partial `app/views/admin/blacklist/_form.html.erb`: form de alta manual con `recipient`, `scope`, `target`, `reason`
-- [ ] T029 [US3] En `destroy`: dentro de una transacción, crear audit `blacklist_removed` con `notification_type="_blacklist_removed_"`, `correlation_id=SecureRandom.uuid`, `metadata={blacklist_id, scope, target, removed_by: request.authorization→user, reason: params[:reason]}` → DELETE de la fila
-- [ ] T030 [US3] En `create`: aplicar `RecipientNormalizer.canonicalize` antes de insertar. Si retorna nil → flash error 422
-- [ ] T031 [P] [US3] Spec request `spec/requests/admin/blacklist_spec.rb`: GET sin auth → 401 · GET con auth → 200 + tabla · GET con filtro `?scope=channel` → solo filas matching (3 ejemplos)
-- [ ] T032 [P] [US3] Spec request mismo archivo: POST con datos válidos → 302 + fila creada con `source=admin_ui` · POST inválido (CHECK constraint) → 422 (2 ejemplos)
-- [ ] T033 [P] [US3] Spec request mismo archivo: DELETE → 302 + fila borrada + audit `blacklist_removed` con `removed_by` y `reason` en metadata · DELETE 404 si id no existe (2 ejemplos)
-- [ ] T034 [US3] Integration spec `spec/integration/blacklist_pipeline_spec.rb` escenario US3: flujo completo create via UI → list → destroy via UI → audit visible en `/admin/audits` con notification_type=`_blacklist_removed_`
+- [x] T024 [US3] Crear controller `app/controllers/admin/blacklist_controller.rb` con `index`, `create`, `destroy`. HTTP Basic con mismas envvars que `/admin/audits` (refactor a concern si conviene)
+- [x] T025 [US3] Agregar rutas en `config/routes.rb`: `resources :blacklist, only: [:index, :create, :destroy], controller: "admin/blacklist"` bajo namespace `:admin`
+- [x] T026 [US3] Vista `app/views/admin/blacklist/index.html.erb` con form de filtros (`recipient`, `scope`, `target`, `source`) + tabla + paginación (cap 50). Reutilizar estilos de `/admin/audits`
+- [x] T027 [P] [US3] Partial `app/views/admin/blacklist/_row.html.erb`: una fila con columnas `recipient_canonical`, `scope`, `target`, `source`, `reason` truncado, `created_at`, botón "Remover" (form POST con `_method=delete`)
+- [x] T028 [P] [US3] Partial `app/views/admin/blacklist/_form.html.erb`: form de alta manual con `recipient`, `scope`, `target`, `reason`
+- [x] T029 [US3] En `destroy`: dentro de una transacción, crear audit `blacklist_removed` con `notification_type="_blacklist_removed_"`, `correlation_id=SecureRandom.uuid`, `metadata={blacklist_id, scope, target, removed_by: request.authorization→user, reason: params[:reason]}` → DELETE de la fila
+- [x] T030 [US3] En `create`: aplicar `RecipientNormalizer.canonicalize` antes de insertar. Si retorna nil → flash error 422
+- [x] T031 [P] [US3] Spec request `spec/requests/admin/blacklist_spec.rb`: GET sin auth → 401 · GET con auth → 200 + tabla · GET con filtro `?scope=channel` → solo filas matching (3 ejemplos)
+- [x] T032 [P] [US3] Spec request mismo archivo: POST con datos válidos → 302 + fila creada con `source=admin_ui` · POST inválido (CHECK constraint) → 422 (2 ejemplos)
+- [x] T033 [P] [US3] Spec request mismo archivo: DELETE → 302 + fila borrada + audit `blacklist_removed` con `removed_by` y `reason` en metadata · DELETE 404 si id no existe (2 ejemplos)
+- [x] T034 [US3] Integration spec `spec/integration/blacklist_pipeline_spec.rb` escenario US3: flujo completo create via UI → list → destroy via UI → audit visible en `/admin/audits` con notification_type=`_blacklist_removed_`
 
 **Block Checkpoint US3**: rubocop sin warnings · rspec verde · cobertura ≥95% en `blacklist_controller.rb` · commit `feat(005-blacklist-bounces/us3): UI /admin/blacklist con remoción auditada`
 
