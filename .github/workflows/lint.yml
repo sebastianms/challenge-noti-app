@@ -1,0 +1,23 @@
+name: RuboCop
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      RUBOCOP_CACHE_ROOT: tmp/rubocop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.RUBOCOP_CACHE_ROOT }}
+          key: rubocop-${{ runner.os }}-${{ hashFiles('.ruby-version', '**/.rubocop.yml', 'Gemfile.lock') }}
+      - name: RuboCop
+        run: bin/rubocop -f github

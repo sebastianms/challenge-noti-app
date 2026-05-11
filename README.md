@@ -1,24 +1,59 @@
-# README
+# Central de Notificaciones
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+[![Tests](https://github.com/sebastianms/challenge-noti-app/actions/workflows/test.yml/badge.svg)](https://github.com/sebastianms/challenge-noti-app/actions/workflows/test.yml)
+[![RuboCop](https://github.com/sebastianms/challenge-noti-app/actions/workflows/lint.yml/badge.svg)](https://github.com/sebastianms/challenge-noti-app/actions/workflows/lint.yml)
+[![Security](https://github.com/sebastianms/challenge-noti-app/actions/workflows/security.yml/badge.svg)](https://github.com/sebastianms/challenge-noti-app/actions/workflows/security.yml)
 
-Things you may want to cover:
+Plataforma de notificaciones centralizada para equipos internos. Un solo archivo por tipo de notificación, idempotencia garantizada por SHA256 + `UNIQUE` constraint en Postgres.
 
-* Ruby version
+## Requisitos
 
-* System dependencies
+- Ruby 3.3
+- PostgreSQL 17
+- Docker (para desarrollo local)
 
-* Configuration
+## Inicio rápido
 
-* Database creation
+```bash
+docker compose up -d postgres
+bin/rails db:create db:migrate
+bundle exec rspec
+```
 
-* Database initialization
+## Agregar una notificación nueva
 
-* How to run the test suite
+Crea un archivo en `app/notifications/`:
 
-* Services (job queues, cache servers, search engines, etc.)
+```ruby
+# app/notifications/birthday_notification.rb
+class BirthdayNotification < AbstractNotification
+  notification_type :birthday
 
-* Deployment instructions
+  def self.title(context = {})
+    "¡Feliz cumpleaños, #{context[:name]}!"
+  end
 
-* ...
+  def self.body(_context = {})
+    "Hoy te deseamos un excelente día."
+  end
+end
+```
+
+Invócala desde cualquier parte del monolito:
+
+```ruby
+result = BirthdayNotification.send("juan@example.com", context: { name: "Juan" })
+result.created?        # => true
+result.correlation_id  # => "uuid-..."
+```
+
+El segundo envío idéntico dentro de la ventana retorna `:duplicate` sin crear una fila nueva.
+
+## Desarrollo
+
+```bash
+bundle exec rspec                        # suite completa
+bundle exec rubocop                      # lint
+bundle exec brakeman --no-pager          # análisis de seguridad
+bundle exec bundler-audit                # auditoría de dependencias
+```
