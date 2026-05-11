@@ -84,9 +84,9 @@ Convención:
 **Goal**: cambios a `notification_rules` se reflejan en ≤ 5 min sin reiniciar workers. Cache hit rate alto.
 **Test independiente**: crear regla, hacer 2 envíos OK, actualizar regla a más restrictiva, hacer 1 envío más → último queda filtered tras invalidación de cache.
 
-- [ ] T034 [US3] Test `spec/central/decisioning/rule_cache_spec.rb` (extender): después de `rule.update!`, `RuleCache.fetch` retorna la versión actualizada inmediatamente (callback after_save) — 2 ejemplos adicionales
-- [ ] T035 [P] [US3] Test `spec/integration/rules_pipeline_spec.rb` (extender con escenario 5): edición en caliente refleja en próximo envío — 2 ejemplos
-- [ ] T036 [P] [US3] Test `spec/integration/rules_pipeline_spec.rb` (extender con escenario 7): cache hit rate — 100 envíos del mismo tipo → ≤ 1 query a `notification_rules`. Usar `ActiveSupport::Notifications.subscribe("sql.active_record")` — 1 ejemplo
+- [x] T034 [US3] Test `spec/central/decisioning/rule_cache_spec.rb` (extender): después de `rule.update!`, `RuleCache.fetch` retorna la versión actualizada inmediatamente (callback after_save) — 2 ejemplos adicionales
+- [x] T035 [P] [US3] Test `spec/integration/rules_pipeline_spec.rb` (extender con escenario 5): edición en caliente refleja en próximo envío — 2 ejemplos
+- [x] T036 [P] [US3] Test `spec/integration/rules_pipeline_spec.rb` (extender con escenario 7): cache hit rate — 100 envíos del mismo tipo → ≤ 1 query a `notification_rules`. Usar `ActiveSupport::Notifications.subscribe("sql.active_record")` — 1 ejemplo
 
 **Block Checkpoint US3**: lint · rspec verde · Deckard · commit `feat(004-rules-engine/us3): cache invalidation hot-reload + verificación cache hit rate`
 

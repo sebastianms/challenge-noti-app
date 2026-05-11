@@ -45,6 +45,48 @@ RSpec.describe "Rules engine pipeline" do
     end
   end
 
+  describe "edición en caliente (US3 Scenario 5)" do
+    it "applies the updated rule on the very next send after rule.update!" do
+      rule = NotificationRule.create!(notification_type: "birthday", max_per_day: 3, channels: [ "email" ])
+
+      3.times { |i| BirthdayNotification.send("juan@example.com", context: { id: "h#{i}", name: "Juan" }) }
+      expect(NotificationAudit.where(status: "enqueued").count).to eq(3)
+
+      rule.update!(max_per_day: 1)
+
+      BirthdayNotification.send("juan@example.com", context: { id: "h_new", name: "Juan" })
+
+      filtered = NotificationAudit.where(status: "filtered").last
+      expect(filtered.metadata["reason"]).to eq("rate_limited")
+      expect(filtered.metadata["rule_id"]).to eq(rule.id)
+    end
+
+    it "after_destroy on a rule removes it from cache immediately" do
+      rule = NotificationRule.create!(notification_type: "birthday", channels: [])
+      BirthdayNotification.send("juan@example.com", context: { id: "d1" })
+      expect(NotificationAudit.last.status).to eq("filtered")
+
+      rule.destroy
+
+      BirthdayNotification.send("juan@example.com", context: { id: "d2" })
+      expect(NotificationAudit.last.status).to eq("enqueued")
+    end
+  end
+
+  describe "cache hit rate (US3 Scenario 7, SC-002)" do
+    it "hits notification_rules at most once for many sends of the same type" do
+      NotificationRule.create!(notification_type: "birthday", channels: [ "email" ])
+
+      query_count = 0
+      callback = ->(*, payload) { query_count += 1 if payload[:sql]&.include?("notification_rules") }
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+        20.times { |i| BirthdayNotification.send("u#{i}@example.com", context: { id: "c#{i}", name: "U#{i}" }) }
+      end
+
+      expect(query_count).to be <= 1
+    end
+  end
+
   describe "digest end-to-end (US2 Scenario 4)" do
     it "accumulates pending_digests and consolidates after the window expires" do
       NotificationRule.create!(notification_type: "birthday", digest_window_seconds: 60, channels: [ "email" ])

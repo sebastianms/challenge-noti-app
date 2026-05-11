@@ -49,6 +49,29 @@ RSpec.describe RuleCache do
     end
   end
 
+  describe "hot reload semantics" do
+    it "after_destroy callback also invalidates the cache" do
+      rule = NotificationRule.create!(notification_type: "welcome", max_per_day: 3)
+      expect(described_class.fetch("welcome")).to eq(rule)
+      rule.destroy
+      expect(described_class.fetch("welcome")).to be_nil
+    end
+
+    it "fresh fetch hits DB after a write (invalidation works synchronously)" do
+      NotificationRule.create!(notification_type: "welcome", max_per_day: 3)
+      described_class.fetch("welcome")
+
+      NotificationRule.find_by(notification_type: "welcome").update!(max_per_day: 99)
+
+      query_count = 0
+      callback = ->(*, payload) { query_count += 1 if payload[:sql]&.include?("notification_rules") }
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+        expect(described_class.fetch("welcome").max_per_day).to eq(99)
+      end
+      expect(query_count).to be >= 1
+    end
+  end
+
   describe ".clear_all" do
     it "removes all cached rule entries" do
       NotificationRule.create!(notification_type: "a")
