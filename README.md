@@ -49,6 +49,14 @@ result.correlation_id  # => "uuid-..."
 
 El segundo envío idéntico dentro de la ventana retorna `:duplicate` sin crear una fila nueva.
 
+## Benchmark de carga
+
+```bash
+bundle exec rake bench:ingestion[140,60]   # 140 rps × 60 segundos
+```
+
+Reporta throughput real, p50/p95/p99 y cantidad de errores. Falla con código de salida 1 si p95 > 50 ms o hay errores.
+
 ## Desarrollo
 
 ```bash
@@ -57,3 +65,7 @@ bundle exec rubocop                      # lint
 bundle exec brakeman --no-pager          # análisis de seguridad
 bundle exec bundler-audit                # auditoría de dependencias
 ```
+
+## Para integradores
+
+Ver [docs/integrators-guide.md](docs/integrators-guide.md) para elegir la ventana de idempotencia, cuándo pasar `context_id`, y qué casos no cubre la Central.
