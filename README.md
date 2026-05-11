@@ -100,6 +100,51 @@ bundle exec bundler-audit                # auditoría de dependencias
 | `app` | `docker compose up app` | Rails dev server en `localhost:3000` |
 | `test` | `docker compose run --rm test` | Corre `bundle exec rspec` y termina |
 
+## Canales de entrega
+
+El sistema usa un registro de canales (`ChannelRegistry`) que permite agregar nuevos proveedores sin modificar el core de ingesta.
+
+### Email (SendGrid)
+
+El canal de email está activo por defecto. Requiere dos variables de entorno:
+
+| Variable | Descripción |
+|----------|-------------|
+| `SENDGRID_API_KEY` | API key de SendGrid |
+| `SENDGRID_FROM_EMAIL` | Dirección remitente (ej. `noreply@example.com`) |
+
+### Worker de despacho
+
+El Worker procesa jobs de `dispatch_queue` en lotes. Puede ejecutarse en foreground con:
+
+```bash
+bin/rails worker:run                        # batch_size=10, sleep_interval=5s
+bin/rails "worker:run[20,10]"               # batch_size=20, sleep_interval=10s
+```
+
+También puede ejecutarse dentro del contenedor:
+
+```bash
+docker compose exec app bin/rails worker:run
+```
+
+El Worker usa `FOR UPDATE SKIP LOCKED` para soportar múltiples instancias simultáneas sin duplicados. Implementa backoff exponencial (1m → 5m → 25m) y DLQ automático tras 3 intentos fallidos.
+
+### Agregar un canal nuevo
+
+```ruby
+# app/central/channels/sms_channel.rb
+class SmsChannel < ChannelStrategy
+  def deliver(event, recipient_id, correlation_id:)
+    # implementación...
+    :delivered
+  end
+
+  def channel_name = "sms"
+end
+ChannelRegistry.register(:sms, SmsChannel.new)
+```
+
 ## Para integradores
 
 Ver [docs/integrators-guide.md](docs/integrators-guide.md) para elegir la ventana de idempotencia, cuándo pasar `context_id`, y qué casos no cubre la Central.

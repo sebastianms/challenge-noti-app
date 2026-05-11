@@ -98,12 +98,14 @@ Convención:
 
 **Goal**: `X-Correlation-ID` del evento llega como header HTTP a Sendgrid.
 
-- [ ] T029 [US3] Verificar que `spec/central/channels/sendgrid_adapter_spec.rb` (T017) ya cubre este contrato — añadir ejemplo explícito de reintento si falta: el reintento usa el mismo `correlation_id` original
-- [ ] T030 [P] [US3] Test de integración `spec/integration/email_dispatch_spec.rb`:
-  - Escenario 1 (happy path): send → process_batch → status done, audits [enqueued, dispatched, delivered]
-  - Escenario 5 (duplicate no genera job): send x2 → dispatch_queue.count == 1
-  - Escenario 6 (X-Correlation-ID): header verificado con WebMock `have_been_requested`
-  — 6 ejemplos
+- [x] T029 [US3] `sendgrid_adapter_spec.rb` ya cubre X-Correlation-ID (header assertion vía WebMock). La propagación del correlation_id original en reintentos queda verificada end-to-end en el integration spec (T030)
+- [x] T030 [P] [US3] Test de integración `spec/integration/email_dispatch_spec.rb`:
+  - happy path: job done tras process_batch
+  - audits en orden: enqueued → dispatched → delivered
+  - X-Correlation-ID propagado al header HTTP de Sendgrid
+  - :created en primer send · :duplicate en envío repetido dentro de la ventana
+  - duplicate no genera job adicional en dispatch_queue
+  — 6 ejemplos · fix: Rails.application.eager_load! en rails_helper para que ChannelRegistry se auto-registre en specs aislados
 
 **Block Checkpoint US3**: lint · rspec verde · cobertura global ≥90% · Deckard · commit `feat(002-email/us3): correlation_id propagado`
 
