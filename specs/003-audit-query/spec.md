@@ -10,6 +10,17 @@ La tabla `notification_audit` y sus transiciones básicas (`enqueued → dispatc
 
 ---
 
+## Clarifications
+
+### Session 2026-05-11
+
+- **Búsqueda por destinatario**: Se agrega columna `recipient_canonical TEXT` a `notification_audit` con índice. El Enqueuer, el Worker y el procesador de webhooks la pueblan al insertar (en lugar de hacer JOIN con `notification_events`).
+- **Taxonomía de status**: Se mantiene el vocabulario de status compartido (`delivered`, `bounced`, etc.) y se agrega columna `source TEXT` con valores `internal` (eventos generados por el pipeline interno: Enqueuer, Worker) o `sendgrid_webhook` (eventos recibidos vía webhook de SendGrid). El status `delivered` de fuente `internal` significa "aceptado por la API (202)"; de fuente `sendgrid_webhook` significa "entregado a la bandeja del destinatario".
+- **Auth del endpoint Hotwire**: HTTP Basic con credenciales en variables de entorno `AUDIT_BASIC_AUTH_USER` y `AUDIT_BASIC_AUTH_PASSWORD`. Phase 7 lo reemplaza por SSO.
+- **Procesamiento del webhook**: Asíncrono. El controller persiste el batch raw en una tabla nueva `webhook_events` y responde 200 inmediato; un Worker dedicado consume `webhook_events` con `FOR UPDATE SKIP LOCKED` (mismo patrón que `dispatch_queue`) y emite las entradas correspondientes en `notification_audit`.
+
+---
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Búsqueda de historial por correlation ID (Priority: P1)
@@ -53,11 +64,12 @@ SendGrid notifica al sistema (vía webhook) que un email fue entregado, rebotó 
 **Independent Test**: Simular un POST al endpoint de webhook con payload de bounce de SendGrid y verificar que se crea una nueva entrada en `notification_audit` con el status correcto, sin modificar las entradas anteriores del mismo `correlation_id`.
 
 **Acceptance Scenarios**:
-1. **Given** un envío previo con `correlation_id = "uuid-abc"` en estado `delivered`, **When** SendGrid envía un webhook de tipo `delivered` con `custom_args.correlation_id = "uuid-abc"`, **Then** el sistema agrega una entrada de audit con status `sg_delivered` y el payload completo del evento.
-2. **Given** un envío previo, **When** SendGrid envía un webhook de tipo `bounce` (hard bounce), **Then** el sistema agrega una entrada con status `sg_bounced` e incluye el tipo de bounce en el metadata.
-3. **Given** un webhook de SendGrid con `correlation_id` desconocido (sin matching en notification_audit), **When** el sistema lo recibe, **Then** lo registra de todas formas como una entrada huérfana con el correlation_id recibido (no descarta silenciosamente).
-4. **Given** un POST al endpoint de webhook con payload mal formado (sin `correlation_id`), **When** el sistema lo recibe, **Then** retorna HTTP 400 y no crea ninguna entrada de audit.
-5. **Given** un POST al endpoint de webhook con firma HMAC inválida, **When** el sistema lo recibe, **Then** retorna HTTP 401 y rechaza el evento sin procesarlo.
+1. **Given** un POST al endpoint con firma HMAC válida y batch de eventos JSON, **When** el endpoint lo recibe, **Then** persiste el batch en `webhook_events` con status `pending` y responde 200 en menos de 100 ms (sin procesar los eventos inline).
+2. **Given** una fila `pending` en `webhook_events` con un evento `delivered` cuyo `custom_args.correlation_id = "uuid-abc"`, **When** el `WebhookEventWorker` la procesa, **Then** crea una entrada en `notification_audit` con `status = "delivered"`, `source = "sendgrid_webhook"`, `correlation_id = "uuid-abc"`, y marca el `webhook_events` como `processed`.
+3. **Given** una fila `pending` con evento `bounce` (hard bounce), **When** el Worker la procesa, **Then** crea una entrada con `status = "bounced"`, `source = "sendgrid_webhook"`, y `metadata` incluye el tipo de bounce (`hard` / `soft`).
+4. **Given** un webhook con `correlation_id` desconocido (sin matching previo en notification_audit), **When** el Worker lo procesa, **Then** lo registra igual con `recipient_canonical = NULL` (no descarta silenciosamente).
+5. **Given** un POST al endpoint con payload no parseable, **When** el endpoint lo recibe, **Then** retorna HTTP 400 sin persistir nada.
+6. **Given** un POST al endpoint con firma HMAC inválida, **When** el endpoint lo recibe, **Then** retorna HTTP 401 sin persistir nada.
 
 ---
 
@@ -95,8 +107,12 @@ El sistema crea automáticamente la partición del mes siguiente antes de que em
 - **FR-003**: Los resultados de búsqueda DEBEN estar paginados con un máximo de 50 ítems por página.
 - **FR-004**: El sistema DEBE exponer un endpoint HTTP para recibir eventos de webhook de SendGrid.
 - **FR-005**: El endpoint de webhook DEBE validar la firma HMAC de SendGrid antes de procesar el payload; rechazar con 401 si la firma es inválida.
-- **FR-006**: El endpoint de webhook DEBE extraer el `correlation_id` del campo `custom_args` del payload y registrar una entrada en `notification_audit`.
-- **FR-007**: El endpoint de webhook DEBE retornar 400 si el payload no contiene `correlation_id`.
+- **FR-006**: El endpoint de webhook DEBE persistir el batch raw recibido en una tabla `webhook_events` (status `pending`) y responder 200 inmediato sin procesar los eventos inline.
+- **FR-007**: Un Worker dedicado (`WebhookEventWorker`) DEBE consumir filas `pending` de `webhook_events` con `FOR UPDATE SKIP LOCKED`, extraer cada evento, y registrar una entrada en `notification_audit` por cada uno usando `custom_args.correlation_id`.
+- **FR-007a**: El endpoint de webhook DEBE retornar 400 si el payload no es un array JSON válido o no puede parsearse.
+- **FR-007b**: El endpoint Hotwire de búsqueda DEBE estar protegido por HTTP Basic con credenciales provistas vía variables de entorno `AUDIT_BASIC_AUTH_USER` y `AUDIT_BASIC_AUTH_PASSWORD`.
+- **FR-007c**: Las entradas insertadas en `notification_audit` DEBEN incluir un campo `source` con valor `internal` (Enqueuer/Worker) o `sendgrid_webhook` (procesador de webhook).
+- **FR-007d**: Las entradas insertadas en `notification_audit` DEBEN incluir el `recipient_canonical` del envío, normalizado.
 - **FR-008**: El sistema DEBE incluir un `PartitionManager` capaz de crear la partición del mes siguiente.
 - **FR-009**: El `PartitionManager` DEBE eliminar particiones con antigüedad mayor a N meses (configurable, default 6).
 - **FR-010**: El `PartitionManager` DEBE ser idempotente: ejecutarlo múltiples veces no genera errores ni duplicados.
@@ -104,8 +120,9 @@ El sistema crea automáticamente la partición del mes siguiente antes de que em
 
 ### Key Entities
 
-- **NotificationAudit**: Registro inmutable de cada transición de estado de un envío. Campos relevantes: `correlation_id`, `status`, `channel`, `payload` (JSONB), `metadata` (JSONB), `created_at`. Ya existe desde Phase 3.
-- **SendGridEvent**: Evento recibido vía webhook. Campos: `event` (tipo: delivered, bounce, spamreport), `email` (destinatario), `timestamp`, `custom_args.correlation_id`, `type` (bounce type: hard/soft).
+- **NotificationAudit**: Registro inmutable de cada transición de estado de un envío. Campos existentes desde Phase 3: `correlation_id`, `event_id`, `status`, `channel`, `payload` (JSONB), `metadata` (JSONB), `created_at`. Campos nuevos en esta feature: `recipient_canonical TEXT` (para búsqueda) y `source TEXT` con valores `internal` o `sendgrid_webhook`.
+- **WebhookEvent**: Batch crudo recibido del webhook de SendGrid, antes de procesar. Campos: `payload` (JSONB con el array completo), `signature` (HMAC validada), `status` (`pending` | `processed` | `failed`), `received_at`, `processed_at`, `failed_reason`.
+- **SendGridEvent**: Evento individual dentro de un batch de webhook. Campos: `event` (tipo: delivered, bounce, spamreport), `email` (destinatario), `timestamp`, `custom_args.correlation_id`, `type` (bounce type: hard/soft).
 
 ---
 
@@ -114,7 +131,7 @@ El sistema crea automáticamente la partición del mes siguiente antes de que em
 ### Measurable Outcomes
 
 - **SC-001**: Dado 1.000 envíos sintéticos distribuidos en el mes, la búsqueda por `correlation_id` retorna el timeline completo en menos de 200 ms en el percentil 95.
-- **SC-002**: Un evento de bounce recibido vía webhook de SendGrid queda registrado en `notification_audit` en menos de 30 segundos desde su recepción.
+- **SC-002**: El endpoint de webhook responde HTTP 200 en menos de 100 ms (p95) tras persistir el batch. El procesamiento asíncrono completa el INSERT en `notification_audit` en menos de 30 segundos desde la recepción del webhook.
 - **SC-003**: La búsqueda por `recipient_canonical` con 10.000 registros en la tabla retorna la primera página en menos de 500 ms.
 - **SC-004**: El `PartitionManager` crea la partición del mes siguiente y elimina las antiguas en una sola ejecución sin errores, verificable en menos de 5 segundos de runtime.
 - **SC-005**: Cobertura de tests ≥ 90% en todos los módulos nuevos de esta feature.
