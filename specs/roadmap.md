@@ -18,15 +18,15 @@ Cada fase es un **shippable slice**: deja la plataforma en un estado funcional y
 
 ---
 
-## Phase 2 — Foundational: AbstractNotification + Idempotencia (R1, R4)
+## Phase 2 — Foundational: AbstractNotification + Idempotencia (R1, R4)  `[DONE]`
 
 > Sin esta capa nada más se sostiene: define el contrato público y garantiza que ningún evento duplicado avance.
 
 - [x] Tabla `notification_events` (particionamiento por `idempotency_window_ts`, ver ADL-001 y ADL-002)
-- [ ] `AbstractNotification` con `title`, `body`, `digest_template`, `send`
-- [ ] `Central::Ingestion::EventBuilder` + cálculo de `idempotency_hash` (SHA256, ventana de tiempo configurable)
-- [ ] `INSERT … ON CONFLICT DO NOTHING` y resultado tipado (`:created` / `:duplicate`)
-- [ ] Tests: idempotencia bajo concurrencia (threads paralelos creando el mismo evento → 1 fila).
+- [x] `AbstractNotification` con `title`, `body`, `digest_template`, `send`
+- [x] `Central::Ingestion::EventBuilder` + cálculo de `idempotency_hash` (SHA256, ventana de tiempo configurable)
+- [x] `INSERT … ON CONFLICT DO NOTHING` y resultado tipado (`:created` / `:duplicate`)
+- [x] Tests: idempotencia bajo concurrencia (threads paralelos creando el mismo evento → 1 fila).
 
 **DoD**: `FooNotification.send("a@b.com")` crea exactamente una fila en `notification_events`; segunda invocación en la misma ventana no crea otra; cobertura ≥ 90% en módulo de ingesta.
 
