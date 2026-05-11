@@ -106,5 +106,20 @@ RSpec.describe "notification_audit schema" do
       SQL
       expect(result.count).to be >= 1
     end
+
+    it "has rate-limit covering index on (notification_type, recipient_canonical, created_at)" do
+      result = connection.execute(<<~SQL)
+        SELECT indexname FROM pg_indexes
+        WHERE tablename = 'notification_audit'
+          AND indexname = 'notification_audit_rate_limit_idx'
+      SQL
+      expect(result.count).to eq(1)
+    end
+
+    it "has notification_type column nullable" do
+      col = connection.columns("notification_audit").find { |c| c.name == "notification_type" }
+      expect(col).not_to be_nil
+      expect(col.null).to be true
+    end
   end
 end

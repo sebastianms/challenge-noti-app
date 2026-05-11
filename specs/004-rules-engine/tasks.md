@@ -12,8 +12,8 @@ Convención:
 
 ## Setup — Estructura
 
-- [ ] T001 [P] Crear carpetas: `app/central/decisioning/`, `spec/central/decisioning/`, `spec/integration/`
-- [ ] T002 [P] Agregar a `.env.example` (con valores por defecto comentados): `DIGEST_SCHEDULER_BATCH_SIZE=50`, `DIGEST_SCHEDULER_SLEEP_INTERVAL=60`
+- [x] T001 [P] Crear carpetas: `app/central/decisioning/`, `spec/central/decisioning/`, `spec/integration/`
+- [x] T002 [P] Agregar a `.env.example` (con valores por defecto comentados): `DIGEST_SCHEDULER_BATCH_SIZE=50`, `DIGEST_SCHEDULER_SLEEP_INTERVAL=60`
 
 **Block Checkpoint Setup**: rubocop verde · rspec sin regresiones · commit `chore(004-rules-engine/setup): carpetas + env vars`
 
@@ -23,21 +23,21 @@ Convención:
 
 > Bloquea US1, US2, US3, US4. Sin las tablas, modelos y la capa de cache, ningún user story corre.
 
-- [ ] T003 Crear migración `db/migrate/20260512000001_create_notification_rules.rb` con DDL completo de `data-model.md` (tabla + constraints CHECK + UNIQUE + índice parcial `WHERE enabled = TRUE`)
-- [ ] T004 [P] Crear migración `db/migrate/20260512000002_create_pending_digests.rb` con DDL completo (tabla + CHECK status + índice parcial sobre `dispatch_at` + índice compuesto `(notification_type, recipient_canonical, status)`)
-- [ ] T005 [P] Crear migración `db/migrate/20260512000003_add_notification_type_to_audit.rb`: `ADD COLUMN notification_type TEXT` + índice parcial cubriente `(notification_type, recipient_canonical, created_at) WHERE NOT NULL`
-- [ ] T006 [P] Crear modelo `app/central/decisioning/notification_rule.rb` con validaciones (uniqueness, inclusion, numericality) y callbacks `after_save`/`after_destroy` → `RuleCache.invalidate`
-- [ ] T007 [P] Crear modelo `app/central/broker/digests/pending_digest.rb` con validaciones (presence, status enum)
-- [ ] T008 [P] Crear value object `app/central/decisioning/decision.rb` con factories `dispatch/digest/filter` + predicates `dispatch?/digest?/filter?`
-- [ ] T009 [P] Crear `app/central/decisioning/rule_cache.rb` con `fetch`, `invalidate`, `clear_all`. TTL 5 min via `Rails.cache.fetch(..., expires_in: 5.minutes)`. `find_by(notification_type:, enabled: true)`
-- [ ] T010 [P] Crear `spec/factories/notification_rules.rb` con factory base + traits (`:with_rate_limit`, `:with_cooldown`, `:with_digest`, `:disabled_channel`)
-- [ ] T011 [P] Crear `spec/factories/pending_digests.rb` con factory base + traits (`:ready` con dispatch_at en pasado, `:future` con dispatch_at en futuro, `:consolidated`)
-- [ ] T012 [P] Actualizar `spec/factories/notification_audits.rb`: agregar campo `notification_type` (default nil) y trait `:filtered` con metadata reason
-- [ ] T013 [P] Test `spec/db/notification_rules_schema_spec.rb`: columnas, UNIQUE constraint, CHECK constraints, índice parcial — 7 ejemplos
-- [ ] T014 [P] Test `spec/db/pending_digests_schema_spec.rb`: columnas, CHECK status, índices parciales y compuestos — 6 ejemplos
-- [ ] T015 [P] Test `spec/db/notification_audit_schema_spec.rb` (ampliar): valida columna `notification_type` y nuevo índice cubriente — 2 ejemplos
-- [ ] T016 [P] Test `spec/central/decisioning/decision_spec.rb`: factories crean el tipo correcto · predicates · accessor de rule_id — 6 ejemplos
-- [ ] T017 [P] Test `spec/central/decisioning/rule_cache_spec.rb`: cache miss consulta BD · cache hit no consulta · invalidate borra entrada · clear_all borra todo · enabled=false retorna nil — 6 ejemplos. Usar `Rails.cache = ActiveSupport::Cache::MemoryStore.new` en el before block
+- [x] T003 Crear migración `db/migrate/20260512000001_create_notification_rules.rb` con DDL completo de `data-model.md` (tabla + constraints CHECK + UNIQUE + índice parcial `WHERE enabled = TRUE`)
+- [x] T004 [P] Crear migración `db/migrate/20260512000002_create_pending_digests.rb` con DDL completo (tabla + CHECK status + índice parcial sobre `dispatch_at` + índice compuesto `(notification_type, recipient_canonical, status)`)
+- [x] T005 [P] Crear migración `db/migrate/20260512000003_add_notification_type_to_audit.rb`: `ADD COLUMN notification_type TEXT` + índice parcial cubriente `(notification_type, recipient_canonical, created_at) WHERE NOT NULL`
+- [x] T006 [P] Crear modelo `app/central/decisioning/notification_rule.rb` con validaciones (uniqueness, inclusion, numericality) y callbacks `after_save`/`after_destroy` → `RuleCache.invalidate`
+- [x] T007 [P] Crear modelo `app/central/broker/digests/pending_digest.rb` con validaciones (presence, status enum)
+- [x] T008 [P] Crear value object `app/central/decisioning/decision.rb` con factories `dispatch/digest/filter` + predicates `dispatch?/digest?/filter?`
+- [x] T009 [P] Crear `app/central/decisioning/rule_cache.rb` con `fetch`, `invalidate`, `clear_all`. TTL 5 min via `Rails.cache.fetch(..., expires_in: 5.minutes)`. `find_by(notification_type:, enabled: true)`
+- [x] T010 [P] Crear `spec/factories/notification_rules.rb` con factory base + traits (`:with_rate_limit`, `:with_cooldown`, `:with_digest`, `:disabled_channel`)
+- [x] T011 [P] Crear `spec/factories/pending_digests.rb` con factory base + traits (`:ready` con dispatch_at en pasado, `:future` con dispatch_at en futuro, `:consolidated`)
+- [x] T012 [P] Actualizar `spec/factories/notification_audits.rb`: agregar campo `notification_type` (default nil) y trait `:filtered` con metadata reason
+- [x] T013 [P] Test `spec/db/notification_rules_schema_spec.rb`: columnas, UNIQUE constraint, CHECK constraints, índice parcial — 7 ejemplos
+- [x] T014 [P] Test `spec/db/pending_digests_schema_spec.rb`: columnas, CHECK status, índices parciales y compuestos — 6 ejemplos
+- [x] T015 [P] Test `spec/db/notification_audit_schema_spec.rb` (ampliar): valida columna `notification_type` y nuevo índice cubriente — 2 ejemplos
+- [x] T016 [P] Test `spec/central/decisioning/decision_spec.rb`: factories crean el tipo correcto · predicates · accessor de rule_id — 6 ejemplos
+- [x] T017 [P] Test `spec/central/decisioning/rule_cache_spec.rb`: cache miss consulta BD · cache hit no consulta · invalidate borra entrada · clear_all borra todo · enabled=false retorna nil — 6 ejemplos. Usar `Rails.cache = ActiveSupport::Cache::MemoryStore.new` en el before block
 
 **Block Checkpoint Foundational**: migraciones corren sin error · `rspec spec/db/ spec/central/decisioning/decision_spec.rb spec/central/decisioning/rule_cache_spec.rb` verde · commit `feat(004-rules-engine/foundational): schema + modelos + RuleCache + Decision`
 

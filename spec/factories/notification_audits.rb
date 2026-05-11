@@ -6,6 +6,7 @@ FactoryBot.define do
     status               { "enqueued" }
     channel              { "email" }
     source               { "internal" }
+    notification_type    { nil }
     recipient_canonical  { nil }
     event_id             { nil }
     payload              { nil }
@@ -30,6 +31,11 @@ FactoryBot.define do
 
     trait :with_recipient do
       recipient_canonical { "recipient@example.com" }
+    end
+
+    trait :filtered do
+      status   { "filtered" }
+      metadata { { "reason" => "rate_limited", "rule_id" => 1 } }
     end
   end
 end
