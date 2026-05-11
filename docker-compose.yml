@@ -15,5 +15,39 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: development
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/challenge_noti_app_development
+      DATABASE_URL_TEST: postgres://postgres:postgres@postgres:5432/challenge_noti_app_test
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+    command: ["./bin/rails", "server", "-b", "0.0.0.0"]
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: test
+      DATABASE_URL_TEST: postgres://postgres:postgres@postgres:5432/challenge_noti_app_test
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+    command: ["bundle", "exec", "rspec"]
+
 volumes:
   postgres_data:
+  bundle_cache:
