@@ -98,10 +98,10 @@ Convención:
 **Goal**: rotar particiones mensuales sin downtime.
 **Test independiente**: estado inicial con particiones [2025-11, 2026-03, 2026-05] + retención 6 meses → tras rotate: existe 2026-06, eliminada 2025-11, conservada 2026-03 (safety < 3 meses).
 
-- [ ] T038 [US4] Crear `app/central/audit/partition_manager.rb` con `PartitionManager.new(table:, retention_months:)`: métodos `create_next_month_partition`, `drop_old_partitions` (con safety guardrail 3 meses), `rotate` (combina ambos)
-- [ ] T039 [P] [US4] Test `spec/central/audit/partition_manager_spec.rb`: crea partición siguiente · idempotencia (segunda invocación no falla) · dropea particiones más viejas que retention · respeta safety guardrail 3 meses · log warning si retention < 3 — 7 ejemplos
-- [ ] T040 [US4] Crear `lib/tasks/partitions.rake` con `partitions:rotate` que invoca PartitionManager para `notification_audit` con retención desde env var `AUDIT_RETENTION_MONTHS` (default 6)
-- [ ] T041 [US4] Verificación quickstart Escenario 6
+- [x] T038 [US4] Crear `app/central/audit/partition_manager.rb` con `PartitionManager.new(table:, retention_months:)`: métodos `create_next_month_partition`, `drop_old_partitions` (con safety guardrail 3 meses), `rotate` (combina ambos)
+- [x] T039 [P] [US4] Test `spec/central/audit/partition_manager_spec.rb`: crea partición siguiente · idempotencia (segunda invocación no falla) · dropea particiones más viejas que retention · respeta safety guardrail 3 meses · log warning si retention < 3 — 7 ejemplos
+- [x] T040 [US4] Crear `lib/tasks/partitions.rake` con `partitions:rotate` que invoca PartitionManager para `notification_audit` con retención desde env var `AUDIT_RETENTION_MONTHS` (default 6)
+- [x] T041 [US4] Verificación quickstart Escenario 6
 
 **Block Checkpoint US4**: lint · rspec verde · cobertura ≥90% en PartitionManager · Deckard · commit `feat(003-audit/us4): PartitionManager + rake partitions:rotate`
 
