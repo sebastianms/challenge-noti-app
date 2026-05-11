@@ -89,14 +89,33 @@ class EventBuilder
 
       if result.rows.any?
         correlation_id, event_id = result.rows.first
-        apply_decision(
-          correlation_id:      correlation_id,
-          event_id:            event_id.to_i,
-          notification_type:   attrs[:notification_type],
-          recipient_canonical: attrs[:recipient_canonical],
-          payload:             attrs[:payload]
+        blacklist_entry = BlacklistEvaluator.match(
+          event: OpenStruct.new(
+            recipient_canonical: attrs[:recipient_canonical],
+            notification_type:   attrs[:notification_type]
+          ),
+          channel: "email"
         )
-        SendResult.created(correlation_id: correlation_id)
+
+        if blacklist_entry
+          audit_blacklisted(
+            correlation_id:      correlation_id,
+            event_id:            event_id.to_i,
+            notification_type:   attrs[:notification_type],
+            recipient_canonical: attrs[:recipient_canonical],
+            entry:               blacklist_entry
+          )
+          SendResult.filtered(correlation_id: correlation_id)
+        else
+          apply_decision(
+            correlation_id:      correlation_id,
+            event_id:            event_id.to_i,
+            notification_type:   attrs[:notification_type],
+            recipient_canonical: attrs[:recipient_canonical],
+            payload:             attrs[:payload]
+          )
+          SendResult.created(correlation_id: correlation_id)
+        end
       else
         existing_id = conn.exec_query(
           "SELECT correlation_id FROM notification_events WHERE idempotency_hash = $1 ORDER BY created_at DESC LIMIT 1",
@@ -149,6 +168,19 @@ class EventBuilder
         metadata:            { reason: decision.reason, rule_id: decision.rule_id }
       )
     end
+  end
+
+  def audit_blacklisted(correlation_id:, event_id:, notification_type:, recipient_canonical:, entry:)
+    NotificationAudit.create!(
+      correlation_id:      correlation_id,
+      event_id:            event_id,
+      status:              "filtered",
+      channel:             "email",
+      source:              "internal",
+      notification_type:   notification_type,
+      recipient_canonical: recipient_canonical,
+      metadata:            { reason: "blacklisted", blacklist_id: entry.id, scope: entry.scope, target: entry.target }
+    )
   end
 
   def enqueue_digest(correlation_id:, event_id:, notification_type:, recipient_canonical:, payload:, decision:)

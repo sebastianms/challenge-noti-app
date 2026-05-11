@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class SendResult
-  STATES = %i[created duplicate rejected].freeze
+  STATES = %i[created duplicate rejected filtered].freeze
 
   attr_reader :state, :correlation_id, :reason
 
@@ -26,10 +26,15 @@ class SendResult
     new(state: :rejected, reason: reason)
   end
 
+  def self.filtered(correlation_id:, reason: "blacklisted")
+    new(state: :filtered, correlation_id: correlation_id, reason: reason)
+  end
+
   def created?   = state == :created
   def duplicate? = state == :duplicate
   def rejected?  = state == :rejected
-  def persisted? = created? || duplicate?
+  def filtered?  = state == :filtered
+  def persisted? = created? || duplicate? || filtered?
 
   def to_h
     { state: state, correlation_id: correlation_id, reason: reason }.compact
