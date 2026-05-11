@@ -28,6 +28,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
@@ -41,3 +43,24 @@ jobs:
         with:
           name: coverage
           path: coverage/
+      - name: Generate coverage badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p badges
+          PCT=$(ruby -r json -e "puts JSON.parse(File.read('coverage/.last_run.json'))['result']['line'].round")
+          if   [ "$PCT" -ge 90 ]; then COLOR="brightgreen"
+          elif [ "$PCT" -ge 80 ]; then COLOR="yellow"
+          else                         COLOR="red"
+          fi
+          curl -s "https://img.shields.io/badge/Coverage-${PCT}%25-${COLOR}?style=flat" \
+               -o badges/coverage.svg
+      - name: Commit coverage badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name  "GitHub Actions"
+          git config user.email "github-actions@github.com"
+          git add badges/coverage.svg
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(ci): update coverage badge [skip ci]"
+            git push
+          fi

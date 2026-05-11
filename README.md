@@ -3,6 +3,7 @@
 [![Tests](https://github.com/sebastianms/challenge-noti-app/actions/workflows/test.yml/badge.svg)](https://github.com/sebastianms/challenge-noti-app/actions/workflows/test.yml)
 [![RuboCop](https://github.com/sebastianms/challenge-noti-app/actions/workflows/lint.yml/badge.svg)](https://github.com/sebastianms/challenge-noti-app/actions/workflows/lint.yml)
 [![Security](https://github.com/sebastianms/challenge-noti-app/actions/workflows/security.yml/badge.svg)](https://github.com/sebastianms/challenge-noti-app/actions/workflows/security.yml)
+[![Coverage](https://raw.githubusercontent.com/sebastianms/challenge-noti-app/main/badges/coverage.svg)](https://github.com/sebastianms/challenge-noti-app/actions/workflows/test.yml)
 
 Plataforma de notificaciones centralizada para equipos internos. Un solo archivo por tipo de notificación, idempotencia garantizada por SHA256 + `UNIQUE` constraint en Postgres.
 
