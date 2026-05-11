@@ -14,8 +14,23 @@ Plataforma de notificaciones centralizada para equipos internos. Un solo archivo
 
 ## Inicio rápido
 
+### Con Docker (recomendado)
+
 ```bash
-docker compose up -d postgres
+# Levantar base de datos y servidor de desarrollo
+docker compose up -d postgres app
+
+# Crear y migrar la base de datos (primera vez)
+docker compose exec app bin/rails db:create db:migrate
+
+# Correr los specs dentro del contenedor
+docker compose run --rm test
+```
+
+### Sin Docker (Rails nativo)
+
+```bash
+docker compose up -d postgres       # solo la base de datos
 bin/rails db:create db:migrate
 bundle exec rspec
 ```
@@ -59,12 +74,31 @@ Reporta throughput real, p50/p95/p99 y cantidad de errores. Falla con código de
 
 ## Desarrollo
 
+### Con Docker
+
+```bash
+docker compose run --rm test                        # suite completa
+docker compose run --rm test bundle exec rubocop    # lint
+docker compose run --rm test bundle exec brakeman --no-pager
+docker compose run --rm test bundle exec bundler-audit
+```
+
+### Sin Docker
+
 ```bash
 bundle exec rspec                        # suite completa
 bundle exec rubocop                      # lint
 bundle exec brakeman --no-pager          # análisis de seguridad
 bundle exec bundler-audit                # auditoría de dependencias
 ```
+
+### Servicios Docker disponibles
+
+| Servicio | Comando | Descripción |
+|----------|---------|-------------|
+| `postgres` | `docker compose up -d postgres` | Base de datos PostgreSQL 17 |
+| `app` | `docker compose up app` | Rails dev server en `localhost:3000` |
+| `test` | `docker compose run --rm test` | Corre `bundle exec rspec` y termina |
 
 ## Para integradores
 
