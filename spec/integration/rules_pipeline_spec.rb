@@ -87,6 +87,26 @@ RSpec.describe "Rules engine pipeline" do
     end
   end
 
+  describe "audit con rule_id y reason (US4 Scenario 6)" do
+    it "populates rule_id and reason in metadata for filtered rows" do
+      rule = NotificationRule.create!(notification_type: "birthday", channels: [])
+      BirthdayNotification.send("juan@example.com", context: { id: "f1", name: "Juan" })
+
+      audit = NotificationAudit.last
+      expect(audit.metadata["rule_id"]).to eq(rule.id)
+      expect(audit.metadata["reason"]).to eq("disabled")
+    end
+
+    it "populates rule_id in metadata for rate_limited rows" do
+      rule = NotificationRule.create!(notification_type: "birthday", max_per_day: 1, channels: [ "email" ])
+      2.times { |i| BirthdayNotification.send("alice@example.com", context: { id: "r#{i}", name: "Alice" }) }
+
+      filtered = NotificationAudit.where(status: "filtered").first
+      expect(filtered.metadata["rule_id"]).to eq(rule.id)
+      expect(filtered.metadata["reason"]).to eq("rate_limited")
+    end
+  end
+
   describe "digest end-to-end (US2 Scenario 4)" do
     it "accumulates pending_digests and consolidates after the window expires" do
       NotificationRule.create!(notification_type: "birthday", digest_window_seconds: 60, channels: [ "email" ])

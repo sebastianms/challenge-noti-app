@@ -5,4 +5,6 @@
   <td><%= audit.status %></td>
   <td><%= audit.source %></td>
   <td><%= audit.channel %></td>
+  <td><%= audit.metadata&.dig("reason") || "—" %></td>
+  <td><%= audit.metadata&.dig("rule_id") || "—" %></td>
 </tr>

@@ -99,9 +99,9 @@ Convención:
 
 > Nota: la lógica de poblado de metadata se implementa en T021 (US1) y T028/T029 (US2). Este bloque solo agrega verificación y muestra cómo /admin/audits los presenta.
 
-- [ ] T037 [US4] Test `spec/controllers/admin/audits_controller_spec.rb` (extender): la vista muestra `metadata.reason` y `metadata.rule_id` para filas filtered y digested — 2 ejemplos
-- [ ] T038 [P] [US4] Test `spec/integration/rules_pipeline_spec.rb` (extender con escenario 6): audit incluye rule_id correcto y reason — 2 ejemplos
-- [ ] T039 [US4] Actualizar vista `app/views/admin/audits/_row.html.erb`: agregar columna `reason` extraída de `metadata.reason` (mostrar `—` si nil)
+- [x] T037 [US4] Test `spec/controllers/admin/audits_controller_spec.rb` (extender): la vista muestra `metadata.reason` y `metadata.rule_id` para filas filtered y digested — 2 ejemplos
+- [x] T038 [P] [US4] Test `spec/integration/rules_pipeline_spec.rb` (extender con escenario 6): audit incluye rule_id correcto y reason — 2 ejemplos
+- [x] T039 [US4] Actualizar vista `app/views/admin/audits/_row.html.erb`: agregar columna `reason` extraída de `metadata.reason` (mostrar `—` si nil)
 
 **Block Checkpoint US4**: lint · rspec verde · Deckard · commit `feat(004-rules-engine/us4): audit con rule_id + reason visible en /admin/audits`
 

@@ -46,5 +46,18 @@ RSpec.describe Admin::AuditsController, type: :request do
       get "/admin/audits", params: { correlation_id: cid }, headers: headers
       expect(response.body).to include("Total: <strong>2</strong>")
     end
+
+    it "renders metadata.reason for filtered rows" do
+      create(:notification_audit, status: "filtered", metadata: { "reason" => "rate_limited", "rule_id" => 42 })
+      get "/admin/audits", headers: headers
+      expect(response.body).to include("rate_limited")
+      expect(response.body).to include("42")
+    end
+
+    it "renders an em-dash placeholder when metadata is nil" do
+      create(:notification_audit, status: "enqueued", metadata: nil)
+      get "/admin/audits", headers: headers
+      expect(response.body).to include("—")
+    end
   end
 end
