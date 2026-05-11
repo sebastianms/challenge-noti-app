@@ -1,10 +1,14 @@
 # frozen_string_literal: true
 
 class PartitionManager
-  SAFETY_MIN_MONTHS = 3
+  SAFETY_MIN_MONTHS    = 3
+  IDENTIFIER_PATTERN   = /\A[a-z_][a-z0-9_]{0,62}\z/
+  InvalidTableName     = Class.new(ArgumentError)
 
   def initialize(table:, retention_months:)
-    @table            = table
+    raise InvalidTableName, "invalid table name: #{table.inspect}" unless IDENTIFIER_PATTERN.match?(table.to_s)
+
+    @table            = table.to_s
     @retention_months = retention_months.to_i
   end
 
@@ -14,16 +18,21 @@ class PartitionManager
   end
 
   def create_next_month_partition(now: Time.current)
-    target = now.utc.beginning_of_month.next_month
-    name   = partition_name(target)
-    from   = target.strftime("%Y-%m-%d")
-    to     = target.next_month.strftime("%Y-%m-%d")
+    target    = now.utc.beginning_of_month.next_month
+    name      = partition_name(target)
+    from_date = target.strftime("%Y-%m-%d")
+    to_date   = target.next_month.strftime("%Y-%m-%d")
 
-    connection.execute(<<~SQL)
-      CREATE TABLE IF NOT EXISTS #{name}
-        PARTITION OF #{@table}
-        FOR VALUES FROM ('#{from}') TO ('#{to}');
-    SQL
+    quoted_parent = connection.quote_table_name(@table)
+    quoted_child  = connection.quote_table_name(name)
+    quoted_from   = connection.quote(from_date)
+    quoted_to     = connection.quote(to_date)
+
+    connection.execute(
+      "CREATE TABLE IF NOT EXISTS #{quoted_child} " \
+      "PARTITION OF #{quoted_parent} " \
+      "FOR VALUES FROM (#{quoted_from}) TO (#{quoted_to})"
+    )
     name
   end
 
@@ -33,13 +42,14 @@ class PartitionManager
       return []
     end
 
-    cutoff = now.utc.beginning_of_month - @retention_months.months
+    cutoff  = now.utc.beginning_of_month - @retention_months.months
     dropped = []
 
     partitions.each do |name, range_from|
       next unless range_from < cutoff
+      next unless IDENTIFIER_PATTERN.match?(name)
 
-      connection.execute("DROP TABLE IF EXISTS #{name}")
+      connection.execute("DROP TABLE IF EXISTS #{connection.quote_table_name(name)}")
       dropped << name
     end
     dropped

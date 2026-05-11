@@ -158,6 +158,54 @@ end
 ChannelRegistry.register(:sms, SmsChannel.new)
 ```
 
+## Auditoría consultable
+
+Cada envío deja un timeline de filas en `notification_audit` (`enqueued → dispatched → delivered | failed`). El endpoint `/admin/audits` permite consultarlo desde el navegador.
+
+```
+GET /admin/audits?correlation_id=<uuid>
+GET /admin/audits?recipient=user@example.com&status=failed&from=2026-05-01
+GET /admin/audits?source=sendgrid_webhook&page=2&per_page=50
+```
+
+Filtros combinables: `correlation_id`, `recipient`, `status`, `source`, `from`, `to`, `page`, `per_page` (cap 50). Si se pasa `correlation_id` retorna el timeline completo ASC; sin él, paginación DESC por `created_at`.
+
+Variables de entorno:
+
+| Variable | Descripción |
+|----------|-------------|
+| `AUDIT_BASIC_AUTH_USER` | Usuario HTTP Basic para `/admin/audits` |
+| `AUDIT_BASIC_AUTH_PASSWORD` | Password HTTP Basic |
+| `AUDIT_RETENTION_MONTHS` | Meses de retención para `partitions:rotate` (default 6, mínimo seguro 3) |
+
+## Webhook de SendGrid
+
+Endpoint async para recibir eventos de entrega de SendGrid (delivered, bounce, dropped, deferred, spamreport):
+
+```
+POST /webhooks/sendgrid
+Headers:
+  X-Twilio-Email-Event-Webhook-Signature: <base64 Ed25519>
+  X-Twilio-Email-Event-Webhook-Timestamp: <unix ts>
+Body: array JSON de eventos
+```
+
+El controller verifica la firma Ed25519, persiste el batch en `webhook_events` con status `pending` y responde 200 inmediatamente. `WebhookEventWorker` consume los pending vía `FOR UPDATE SKIP LOCKED` y traduce cada evento a una fila en `notification_audit` con `source = sendgrid_webhook`. Ver [ADL-007](.design-logs/ADL-007-ed25519-sendgrid-webhook-signature.md).
+
+Variable requerida:
+
+| Variable | Descripción |
+|----------|-------------|
+| `SENDGRID_WEBHOOK_PUBLIC_KEY` | Llave pública Ed25519 en Base64 (panel SendGrid → Mail Settings → Event Webhook) |
+
+## Tareas Rake
+
+| Comando | Descripción |
+|---------|-------------|
+| `bin/rails worker:run[batch_size,sleep_interval]` | Despacha jobs de `dispatch_queue` (email) |
+| `bin/rails webhook_worker:run[batch_size,sleep_interval]` | Procesa eventos pendientes de `webhook_events` |
+| `bin/rails partitions:rotate` | Crea la partición del próximo mes y dropea las más viejas que `AUDIT_RETENTION_MONTHS` |
+
 ## Para integradores
 
 Ver [docs/integrators-guide.md](docs/integrators-guide.md) para elegir la ventana de idempotencia, cuándo pasar `context_id`, y qué casos no cubre la Central.

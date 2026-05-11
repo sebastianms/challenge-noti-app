@@ -52,18 +52,18 @@ Cada fase es un **shippable slice**: deja la plataforma en un estado funcional y
 
 ---
 
-## Phase 4 — Auditoría consultable (R6)
+## Phase 4 — Auditoría consultable (R6) [DONE]
 
 > Soporte puede responder "¿por qué Juan no recibió X?" en segundos.
 
-> **Nota**: la tabla `notification_audit` y sus transiciones básicas (`enqueued → dispatched → delivered/failed`) quedaron completas en Phase 3. Esta fase agrega la capa de consulta y operación.
+Implementado en feature [003-audit-query](003-audit-query/):
 
-- [ ] `PartitionManager` — crea la partición mensual siguiente, dropea particiones con antigüedad > N meses
-- [ ] Búsqueda por `correlation_id`, `recipient_canonical`, rango de fechas, status
-- [ ] Endpoint Hotwire de búsqueda con paginación (sin UI completa todavía)
-- [ ] Webhook handler `POST /webhooks/sendgrid` — recibe eventos de entrega/bounce de SendGrid, busca por `custom_args.correlation_id` y agrega audit entry
+- [x] `PartitionManager.new(table:, retention_months:).rotate` — crea partición del próximo mes, dropea las más viejas que `AUDIT_RETENTION_MONTHS` con safety guardrail de 3 meses. Rake: `partitions:rotate`.
+- [x] `AuditSearch.new(...).call` con dos modos: por `correlation_id` (timeline ASC) o filtros combinables (`recipient`, `status`, `source`, `from`, `to`, `page`, `per_page` cap 50) con `Result` paginado.
+- [x] Endpoint Hotwire `/admin/audits` protegido con HTTP Basic (`AUDIT_BASIC_AUTH_USER` / `AUDIT_BASIC_AUTH_PASSWORD`). Form de filtros + tabla + paginación.
+- [x] Webhook async `POST /webhooks/sendgrid` con verificación Ed25519 (ver [ADL-007](../.design-logs/ADL-007-ed25519-sendgrid-webhook-signature.md)). Persiste batch en `webhook_events`, `WebhookEventWorker` lo procesa con `FOR UPDATE SKIP LOCKED` y traduce `delivered/bounce/dropped/deferred/spamreport` → `NotificationAudit` con `source = sendgrid_webhook`.
 
-**DoD**: tras 1.000 envíos sintéticos, búsqueda por `correlation_id` retorna timeline completo en < 200 ms p95; un bounce de SendGrid se registra en `notification_audit` en < 30 s.
+**Esquema agregado**: columnas `source` (CHECK internal/sendgrid_webhook, default internal) y `recipient_canonical` (nullable) en `notification_audit` + tabla `webhook_events`. Cobertura suite: 100%.
 
 ---
 

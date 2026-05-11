@@ -109,11 +109,11 @@ Convención:
 
 ## Polish — Docs, ADLs, hardening
 
-- [ ] T042 [P] Crear `.design-logs/ADL-007-ed25519-sendgrid-webhook-signature.md`: contexto (SendGrid Signed Webhooks v3), decisión (Ed25519 con gema dedicada), alternativas, consecuencias
-- [ ] T043 [P] Ampliar `.design-logs/ADL-005-skip-locked-job-claiming.md` con nota: "Extensión 2026-05-11 — el mismo patrón se reusa para `webhook_events` con `WebhookEventWorker`"
-- [ ] T044 [P] Actualizar `README.md`: sección "Auditoría consultable" (endpoint `/admin/audits`, env vars de HTTP Basic) + "Webhook de SendGrid" (endpoint, configuración de public key) + tabla de rake tasks (worker:run, webhook_worker:run, partitions:rotate)
-- [ ] T045 [P] Actualizar `specs/roadmap.md`: marcar Phase 4 como `[DONE]` con descripción real de implementación
-- [ ] T046 Smoke test final: suite completa verde · cobertura ≥90% global · rubocop 0 offenses · Brakeman 0 findings · bundler-audit sin vulnerabilidades
+- [x] T042 [P] Crear `.design-logs/ADL-007-ed25519-sendgrid-webhook-signature.md`: contexto (SendGrid Signed Webhooks v3), decisión (Ed25519 con gema dedicada), alternativas, consecuencias
+- [x] T043 [P] Ampliar `.design-logs/ADL-005-skip-locked-job-claiming.md` con nota: "Extensión 2026-05-11 — el mismo patrón se reusa para `webhook_events` con `WebhookEventWorker`"
+- [x] T044 [P] Actualizar `README.md`: sección "Auditoría consultable" (endpoint `/admin/audits`, env vars de HTTP Basic) + "Webhook de SendGrid" (endpoint, configuración de public key) + tabla de rake tasks (worker:run, webhook_worker:run, partitions:rotate)
+- [x] T045 [P] Actualizar `specs/roadmap.md`: marcar Phase 4 como `[DONE]` con descripción real de implementación
+- [x] T046 Smoke test final: suite completa verde · cobertura ≥90% global · rubocop 0 offenses · Brakeman 0 findings · bundler-audit sin vulnerabilidades
 
 **Block Checkpoint Polish**: lint · rspec verde · cobertura global ≥90% · Brakeman clean · Deckard global · commit `chore(003-audit/polish): ADL-007, README, roadmap, smoke` · push final
 

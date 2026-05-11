@@ -41,3 +41,7 @@ Verificado con el spec `:threads` (`concurrent workers claim disjoint sets of jo
 - Jobs nunca se despachan dos veces simultáneamente (garantía a nivel PostgreSQL).
 - `SKIP LOCKED` requiere PostgreSQL ≥ 9.5; compatible con PG 17 del stack.
 - Relacionado con ADL-004: dentro de la misma query se usa `CLOCK_TIMESTAMP()` para evitar el problema de transacción DatabaseCleaner.
+
+## Extensión 2026-05-11 — webhook_events (feature 003-audit-query)
+
+El mismo patrón se reusa para reclamar jobs de `webhook_events` en `WebhookEventWorker.process_batch`. La query selecciona filas `WHERE status = 'pending'`, marca `processing` con `attempts = attempts + 1` y aplica `FOR UPDATE SKIP LOCKED` para soportar múltiples workers simultáneos sin doble procesamiento. La única diferencia con `DispatchQueue` es que no usa backoff exponencial: si el procesador falla, el job se marca `failed` con `failed_reason` (la verificación de firma ocurre antes de persistir, así que las fallas reales son raras y suelen requerir intervención manual).
