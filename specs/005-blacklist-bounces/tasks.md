@@ -54,14 +54,14 @@ Convenciones:
 
 > SendGrid envía `bounce` (hard) / `dropped` / `spamreport` → `WebhookEventWorker` inserta fila con `scope=channel, target=email`, idempotente por UNIQUE.
 
-- [ ] T016 [US2] Extender `app/central/broker/webhook_event_worker.rb`: agregar método privado `hard_failure?(event)` (true para `bounce` con `type=bounce`, `dropped`, `spamreport`; false para `bounce` con `type=blocked`, `deferred`, `delivered`)
-- [ ] T017 [US2] En `webhook_event_worker.rb` extender `process_event`: cuando `hard_failure?(event)` → INSERT en `notification_blacklist` con `scope='channel'`, `target='email'`, `source` mapeado del event type, `reason = "#{event['reason']} (sg_event_id=#{event['sg_event_id']})"`, dentro de la misma transacción que el audit. Usar `insert_all(... on_conflict_do_nothing)`
-- [ ] T018 [P] [US2] Spec `spec/central/broker/webhook_event_worker_blacklist_spec.rb`: evento `bounce + type=bounce` → blacklist creada con source=hard_bounce (1 ejemplo)
-- [ ] T019 [P] [US2] Spec mismo archivo: evento `bounce + type=blocked` → NO blacklist (solo audit) (1 ejemplo)
-- [ ] T020 [P] [US2] Spec mismo archivo: evento `dropped` → blacklist source=dropped · evento `spamreport` → blacklist source=spamreport · evento `deferred` → no blacklist (3 ejemplos)
-- [ ] T021 [P] [US2] Spec mismo archivo: evento duplicado (mismo recipient ya bloqueado) → 1 sola fila (idempotencia ON CONFLICT) (1 ejemplo)
-- [ ] T022 [P] [US2] Spec mismo archivo: forzar fallo en blacklist insert (stub que raise) → audit roll-backea (1 ejemplo, valida transaccionalidad)
-- [ ] T023 [US2] Integration spec `spec/integration/blacklist_pipeline_spec.rb` escenario US2: POST `/webhooks/sendgrid` firmado con payload `bounce` hard → `WebhookEventWorker.new.process_batch` → `NotificationBlacklist.where(recipient_canonical: ...).exists?` true · siguiente `WelcomeNotification.send` al mismo destinatario → filtered
+- [x] T016 [US2] Extender `app/central/broker/webhook_event_worker.rb`: agregar método privado `hard_failure?(event)` (true para `bounce` con `type=bounce`, `dropped`, `spamreport`; false para `bounce` con `type=blocked`, `deferred`, `delivered`)
+- [x] T017 [US2] En `webhook_event_worker.rb` extender `process_event`: cuando `hard_failure?(event)` → INSERT en `notification_blacklist` con `scope='channel'`, `target='email'`, `source` mapeado del event type, `reason = "#{event['reason']} (sg_event_id=#{event['sg_event_id']})"`, dentro de la misma transacción que el audit. Usar `insert_all(... on_conflict_do_nothing)`
+- [x] T018 [P] [US2] Spec `spec/central/broker/webhook_event_worker_blacklist_spec.rb`: evento `bounce + type=bounce` → blacklist creada con source=hard_bounce (1 ejemplo)
+- [x] T019 [P] [US2] Spec mismo archivo: evento `bounce + type=blocked` → NO blacklist (solo audit) (1 ejemplo)
+- [x] T020 [P] [US2] Spec mismo archivo: evento `dropped` → blacklist source=dropped · evento `spamreport` → blacklist source=spamreport · evento `deferred` → no blacklist (3 ejemplos)
+- [x] T021 [P] [US2] Spec mismo archivo: evento duplicado (mismo recipient ya bloqueado) → 1 sola fila (idempotencia ON CONFLICT) (1 ejemplo)
+- [x] T022 [P] [US2] Spec mismo archivo: forzar fallo en blacklist insert (stub que raise) → audit roll-backea (1 ejemplo, valida transaccionalidad)
+- [x] T023 [US2] Integration spec `spec/integration/blacklist_pipeline_spec.rb` escenario US2: POST `/webhooks/sendgrid` firmado con payload `bounce` hard → `WebhookEventWorker.new.process_batch` → `NotificationBlacklist.where(recipient_canonical: ...).exists?` true · siguiente `WelcomeNotification.send` al mismo destinatario → filtered
 
 **Block Checkpoint US2**: rubocop sin warnings · rspec verde · cobertura ≥95% en webhook_event_worker (ramal hard_failure) · commit `feat(005-blacklist-bounces/us2): auto-blacklist desde hard bounce/dropped/spamreport`
 
