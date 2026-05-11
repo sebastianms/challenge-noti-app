@@ -9,8 +9,19 @@ Rails.application.routes.draw do
     post "sendgrid", to: "sendgrid_events#create"
   end
 
+  devise_for :admin_users,
+             path: "admin",
+             path_names: { sign_in: "login", sign_out: "logout" },
+             controllers: { sessions: "admin/sessions" },
+             skip: [ :registrations, :confirmations, :passwords ]
+
   namespace :admin do
-    resources :audits, only: [ :index ]
+    get  "dashboard", to: "dashboard#index", as: :dashboard
+    resources :rules, only: [ :index, :new, :create, :edit, :update, :destroy ] do
+      member { get :history }
+    end
+    resource  :mock_data, only: [ :create ]
+    resources :audits,    only: [ :index ]
     resources :blacklist, only: [ :index, :create, :destroy ]
   end
 
