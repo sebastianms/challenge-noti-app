@@ -51,17 +51,10 @@ Convención:
 **Goal**: un integrador crea una clase con `title` y `body` y la invoca, sin pasos extra.
 **Test independiente**: una `BirthdayNotification` ficticia es invocable desde otro módulo y responde con un `SendResult`.
 
-- [ ] T016 [US1] Crear `app/notifications/abstract_notification.rb` con la API pública: `notification_type`, `idempotency_window`, `resolved_notification_type`, `resolved_idempotency_window`, `title`, `body`, `digest_template`, `send`. Delega a `Central::Ingestion::EventBuilder.build`
-- [ ] T017 [P] [US1] Test de carga: `spec/notifications/abstract_notification_spec.rb`
-  - una subclase con `title` y `body` no rompe al cargarse
-  - una subclase sin `title` lanza `NotImplementedError` con mensaje específico al invocarla
-  - una subclase sin `body` lanza `NotImplementedError` con mensaje específico al invocarla
-  - `notification_type :stable_id` → `resolved_notification_type` retorna `"stable_id"`
-  - sin declarar `notification_type` → retorna FQN normalizado (`"birthday"` para `BirthdayNotification`)
-  - `idempotency_window 1.hour` → `resolved_idempotency_window` retorna `1.hour`
-  - default → retorna `1.minute`
-- [ ] T018 [P] [US1] Crear fixture `spec/support/fixture_notifications.rb` con `BirthdayNotification`, `InvoicePaidNotification`, `BrokenNotification` (sin body) para reutilizar en tests
-- [ ] T019 [US1] Verificación quickstart Escenario 1 + Escenario 7
+- [x] T016 [US1] Crear `app/notifications/abstract_notification.rb` con la API pública: `notification_type`, `idempotency_window`, `resolved_notification_type`, `resolved_idempotency_window`, `title`, `body`, `digest_template`, `send`. Delega a `EventBuilder.build`
+- [x] T017 [P] [US1] Test de carga: `spec/notifications/abstract_notification_spec.rb` — 7 ejemplos verde
+- [x] T018 [P] [US1] Crear fixture `spec/support/fixture_notifications.rb` con `BirthdayNotification`, `InvoicePaidNotification`, `BrokenNotification` (sin body) para reutilizar en tests
+- [x] T019 [US1] Verificación quickstart Escenario 1 + Escenario 7 — cubiertos por specs de AbstractNotification y EventBuilder
 
 **Block Checkpoint US1**: lint · rspec verde · cobertura ≥90% en `app/notifications/` · Deckard sobre `abstract_notification.rb` · commit `feat(001-foundational/us1): AbstractNotification contract`
 
@@ -72,22 +65,17 @@ Convención:
 **Goal**: invocaciones equivalentes dentro de la ventana producen una sola fila.
 **Test independiente**: 10.000 hilos compitiendo → 1 fila + 9.999 `:duplicate`.
 
-- [ ] T020 [P] [US2] Crear `app/central/ingestion/send_result.rb` con value object frozen y constructores `created`, `duplicate`, `rejected`
-- [ ] T021 [P] [US2] Test `spec/central/ingestion/send_result_spec.rb`: estados válidos, frozen, métodos predicado, serialización `to_h`
-- [ ] T022 [P] [US2] Crear `app/central/ingestion/recipient_normalizer.rb`: detección email vs user_id por presencia de `@`, lowercase + trim, validaciones (no vacío, sin `\n`, ≤320 chars)
-- [ ] T023 [P] [US2] Test `spec/central/ingestion/recipient_normalizer_spec.rb`: tabla de casos email/user_id/inválidos, validar ArgumentError con mensaje correcto
-- [ ] T024 [P] [US2] Crear `app/central/ingestion/idempotency_hash.rb`: `compute(notification_type:, recipient_canonical:, context_id:, window_ts:)` retorna SHA256 hex de los inputs concatenados con separador
-- [ ] T025 [P] [US2] Test `spec/central/ingestion/idempotency_hash_spec.rb`: determinismo (mismos inputs → mismo hash), sensibilidad (cualquier cambio de input → hash distinto), formato (64 chars hex)
-- [ ] T026 [US2] Crear `app/central/ingestion/event_builder.rb` con `EventBuilder.build(...)`: orquesta normalize → hash → INSERT ON CONFLICT, captura `ArgumentError` y devuelve `:rejected`. Implementa `floor_to_window`, `extract_context_id` (default `"no_context"`), `serialize_payload`
-- [ ] T027 [US2] Test unitario `spec/central/ingestion/event_builder_spec.rb`:
-  - inputs válidos sin context → `:created` con correlation_id UUID
-  - segunda invocación equivalente → `:duplicate` con mismo correlation_id
-  - context distinto → dos `:created` con correlation_ids distintos
-  - recipient inválido → `:rejected` con razón, sin fila en DB
-  - payload no serializable (BasicObject) → `:rejected`, sin fila en DB
-- [ ] T028 [US2] Test de **borde de ventana** `spec/central/ingestion/window_boundary_spec.rb`: `travel_to 10:23:59` + invocación, `travel_to 10:24:01` + invocación → 2 filas (comportamiento documentado en R-08)
-- [ ] T029 [US2] Test de **concurrencia** `spec/integration/idempotency_concurrency_spec.rb`: 50 hilos × 200 invocaciones = 10.000 invocaciones equivalentes → exactamente 1 fila, 9.999 `:duplicate`, 0 excepciones
-- [ ] T030 [US2] Verificación quickstart Escenarios 2, 3, 5
+- [x] T020 [P] [US2] Crear `app/central/ingestion/send_result.rb` con value object frozen y constructores `created`, `duplicate`, `rejected`
+- [x] T021 [P] [US2] Test `spec/central/ingestion/send_result_spec.rb` — 16 ejemplos verde
+- [x] T022 [P] [US2] Crear `app/central/ingestion/recipient_normalizer.rb`: detección email vs user_id por presencia de `@`, lowercase + trim, validaciones (no vacío, sin `\n`, ≤320 chars)
+- [x] T023 [P] [US2] Test `spec/central/ingestion/recipient_normalizer_spec.rb` — 11 ejemplos verde
+- [x] T024 [P] [US2] Crear `app/central/ingestion/idempotency_hash.rb`: `compute(notification_type:, recipient_canonical:, context_id:, window_ts:)` retorna SHA256 hex de los inputs concatenados con separador
+- [x] T025 [P] [US2] Test `spec/central/ingestion/idempotency_hash_spec.rb` — 6 ejemplos verde
+- [x] T026 [US2] Crear `app/central/ingestion/event_builder.rb` con `EventBuilder.build(...)`: orquesta normalize → hash → INSERT ON CONFLICT, captura `ArgumentError` y devuelve `:rejected`. Implementa `floor_to_window`, `extract_context_id` (default `"no_context"`), `serialize_payload`
+- [x] T027 [US2] Test unitario `spec/central/ingestion/event_builder_spec.rb` — 7 ejemplos verde
+- [x] T028 [US2] Test de **borde de ventana** `spec/central/ingestion/window_boundary_spec.rb` — 2 ejemplos verde
+- [x] T029 [US2] Test de **concurrencia** `spec/integration/idempotency_concurrency_spec.rb` — 50×200=10k invocaciones, 1 fila, 0 excepciones
+- [x] T030 [US2] Verificación quickstart Escenarios 2, 3, 5 — cubiertos por specs de EventBuilder y concurrencia
 
 **Block Checkpoint US2**: lint · rspec verde (incluye test de concurrencia) · cobertura ≥90% en `app/central/ingestion/` · Deckard sobre `event_builder.rb` · commit `feat(001-foundational/us2): idempotencia con SHA256 + UNIQUE + ON CONFLICT`
 

@@ -2,14 +2,13 @@
 
 class EventBuilder
   def self.build(notification_class:, recipient:, context: {}, priority: :standard)
-    new(notification_class, recipient, context, priority).call
+    new(notification_class:, recipient:, context:).call
   end
 
-  def initialize(notification_class, recipient, context, priority)
+  def initialize(notification_class:, recipient:, context:)
     @notification_class = notification_class
     @recipient_input    = recipient
     @context            = context || {}
-    @priority           = priority
   end
 
   def call
