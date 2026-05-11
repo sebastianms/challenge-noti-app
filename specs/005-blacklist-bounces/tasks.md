@@ -40,11 +40,11 @@ Convenciones:
 
 > Compliance crea una fila con `source=manual` desde consola Rails. Cualquier `.send` posterior al destinatario queda filtrado.
 
-- [ ] T011 [US1] Integration spec `spec/integration/blacklist_pipeline_spec.rb` escenario US1a: `NotificationBlacklist.create!(scope: "global", source: "manual", ...)`. `BirthdayNotification.send` con casing distinto → `:filtered`, audit con reason=blacklisted, `DispatchQueue.count == 0`
-- [ ] T012 [P] [US1] Integration spec mismo archivo escenario US1b: `scope=type, target=birthday` → `BirthdayNotification.send` filtered, `MfaNotification.send` created
-- [ ] T013 [P] [US1] Integration spec escenario US1c: `scope=channel, target=email` → envío por email filtered (verificar via `apply_decision` o end-to-end)
-- [ ] T014 [P] [US1] Spec edge case: blacklist con `recipient_canonical` ya canonicalizado matchea contra `event.send(recipient: "User@X.com")` (uppercase) — verifica que canonicalization se aplica en ambos lados
-- [ ] T015 [US1] Verificar que `RecipientNormalizer.canonicalize` se llame antes de cualquier insert/lookup en blacklist (auditar código añadido en T006/T008)
+- [x] T011 [US1] Integration spec `spec/integration/blacklist_pipeline_spec.rb` escenario US1a: `NotificationBlacklist.create!(scope: "global", source: "manual", ...)`. `BirthdayNotification.send` con casing distinto → `:filtered`, audit con reason=blacklisted, `DispatchQueue.count == 0`
+- [x] T012 [P] [US1] Integration spec mismo archivo escenario US1b: `scope=type, target=birthday` → `BirthdayNotification.send` filtered, `MfaNotification.send` created
+- [x] T013 [P] [US1] Integration spec escenario US1c: `scope=channel, target=email` → envío por email filtered (verificar via `apply_decision` o end-to-end)
+- [x] T014 [P] [US1] Spec edge case: blacklist con `recipient_canonical` ya canonicalizado matchea contra `event.send(recipient: "User@X.com")` (uppercase) — verifica que canonicalization se aplica en ambos lados
+- [x] T015 [US1] Verificar que `RecipientNormalizer.canonicalize` se llame antes de cualquier insert/lookup en blacklist (auditar código añadido en T006/T008)
 
 **Block Checkpoint US1**: rubocop sin warnings · rspec verde · cobertura ≥95% en `blacklist_evaluator.rb` · commit `feat(005-blacklist-bounces/us1): opt-out manual filtra envíos pre-reglas`
 
