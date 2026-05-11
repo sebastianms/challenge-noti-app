@@ -12,10 +12,10 @@ Convención:
 
 ## Setup — Dependencias y configuración
 
-- [ ] T001 Agregar `gem "webmock", "~> 3.0"` al grupo `:test` en `Gemfile` y ejecutar `bundle install`
-- [ ] T002 [P] Crear `spec/support/webmock.rb` con `require "webmock/rspec"` y `WebMock.disable_net_connect!(allow_localhost: true)`
-- [ ] T003 [P] Crear estructura de carpetas: `app/central/broker/`, `app/central/channels/`, `app/central/audit/` con `.keep` si están vacías
-- [ ] T004 [P] Actualizar `config/application.rb`: agregar `app/central/broker`, `app/central/channels`, `app/central/audit` a `config.autoload_paths`
+- [x] T001 Agregar `gem "webmock", "~> 3.0"` al grupo `:test` en `Gemfile` y ejecutar `bundle install`
+- [x] T002 [P] Crear `spec/support/webmock.rb` con `require "webmock/rspec"` y `WebMock.disable_net_connect!(allow_localhost: true)`
+- [x] T003 [P] Crear estructura de carpetas: `app/central/broker/`, `app/central/channels/`, `app/central/audit/` con `.keep` si están vacías
+- [x] T004 [P] Actualizar `config/application.rb`: agregar `app/central/broker`, `app/central/channels`, `app/central/audit` a `config.autoload_paths`
 
 **Block Checkpoint Setup**: `bundle exec rspec` corre en verde con WebMock activo (sin nuevos specs aún) · `bundle exec rubocop` sin offenses
 
@@ -25,14 +25,14 @@ Convención:
 
 > Bloquea US1, US2, US3: sin las tablas y los modelos AR nada puede correr.
 
-- [ ] T005 Crear migración `db/migrate/20260510000002_create_dispatch_queue.rb` con DDL completo de `data-model.md`: tabla `dispatch_queue`, CHECK constraints, índice parcial `WHERE status = 'pending'`
-- [ ] T006 Crear migración `db/migrate/20260510000003_create_notification_audit.rb` con DDL de `notification_audit` particionada por mes + partición inicial `notification_audit_2026_05` + índices GIN y por `correlation_id`
-- [ ] T007 [P] Crear modelo `app/central/broker/dispatch_queue.rb` con `BACKOFF_SCHEDULE`, `MAX_ATTEMPTS`, validaciones AR, `next_backoff`, `permanent_failure?`
-- [ ] T008 [P] Crear modelo `app/central/audit/notification_audit.rb` con validaciones AR básicas
-- [ ] T009 [P] Crear `spec/factories/dispatch_queues.rb` con factory base + traits (`in_flight`, `failed`, `done`)
-- [ ] T010 [P] Crear `spec/factories/notification_audits.rb` con factory base + traits por status
-- [ ] T011 [P] Test de migración `spec/db/dispatch_queue_schema_spec.rb`: columnas, constraints CHECK, índice parcial presente en `pg_indexes` — 8 ejemplos
-- [ ] T012 [P] Test de migración `spec/db/notification_audit_schema_spec.rb`: particionamiento en `pg_partitions`, índices GIN, partición inicial — 6 ejemplos
+- [x] T005 Crear migración `db/migrate/20260510000002_create_dispatch_queue.rb` con DDL completo de `data-model.md`: tabla `dispatch_queue`, CHECK constraints, índice parcial `WHERE status = 'pending'`
+- [x] T006 Crear migración `db/migrate/20260510000003_create_notification_audit.rb` con DDL de `notification_audit` particionada por mes + partición inicial `notification_audit_2026_05` + índices GIN y por `correlation_id`
+- [x] T007 [P] Crear modelo `app/central/broker/dispatch_queue.rb` con `BACKOFF_SCHEDULE`, `MAX_ATTEMPTS`, validaciones AR, `next_backoff`, `permanent_failure?`
+- [x] T008 [P] Crear modelo `app/central/audit/notification_audit.rb` con validaciones AR básicas
+- [x] T009 [P] Crear `spec/factories/dispatch_queues.rb` con factory base + traits (`in_flight`, `failed`, `done`)
+- [x] T010 [P] Crear `spec/factories/notification_audits.rb` con factory base + traits por status
+- [x] T011 [P] Test de migración `spec/db/dispatch_queue_schema_spec.rb`: columnas, constraints CHECK, índice parcial presente en `pg_indexes` — 8 ejemplos
+- [x] T012 [P] Test de migración `spec/db/notification_audit_schema_spec.rb`: particionamiento en `pg_partitions`, índices GIN, partición inicial — 6 ejemplos
 
 **Block Checkpoint Foundational**: migraciones corren sin error · `rspec spec/db/` verde · modelos AR válidos
 

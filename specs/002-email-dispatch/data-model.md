@@ -13,7 +13,7 @@ Cola de despacho (Capa C del pipeline). Un job por evento creado.
 ```sql
 CREATE TABLE dispatch_queue (
   id              BIGSERIAL PRIMARY KEY,
-  event_id        BIGINT      NOT NULL REFERENCES notification_events(id),
+  event_id        BIGINT      NOT NULL,  -- sin FK declarativa; ver ADL-005
   priority        TEXT        NOT NULL DEFAULT 'standard'
                               CHECK (priority IN ('critical', 'standard', 'bulk')),
   status          TEXT        NOT NULL DEFAULT 'pending'
@@ -33,6 +33,10 @@ CREATE INDEX idx_dispatch_queue_workable
 ```
 
 **Notas**:
+- `event_id` no tiene FK declarativa — `notification_events` es particionada con PK compuesta
+  `(id, idempotency_window_ts)` y Postgres no acepta FK a columnas que no sean PK/UNIQUE completa.
+  La integridad se garantiza por `EventBuilder#persist` que hace el enqueue en la misma transacción.
+  Ver **ADL-005**.
 - `attempts` empieza en 0 y se incrementa antes de cada intento.
 - `locked_at` se setea cuando el Worker toma el job (`in_flight`); se limpia al completar o fallar.
 - `failed_reason` documenta el motivo de DLQ: `"sendgrid_5xx"`, `"no_email_address"`, `"invalid_payload"`, etc.
@@ -92,10 +96,16 @@ No se cambia el DDL. Se agrega la asociación AR `has_one :dispatch_job, class_n
 ```ruby
 # app/central/broker/dispatch_queue.rb
 class DispatchQueue < ApplicationRecord
-  belongs_to :notification_event
+  # Sin belongs_to :notification_event — no hay FK declarativa (ver ADL-005)
 
-  BACKOFF_SCHEDULE = [1.minute, 5.minutes, 25.minutes].freeze
+  BACKOFF_SCHEDULE = [ 1.minute, 5.minutes, 25.minutes ].freeze
   MAX_ATTEMPTS     = BACKOFF_SCHEDULE.size
+
+  validates :event_id,        presence: true
+  validates :priority,        inclusion: { in: %w[critical standard bulk] }
+  validates :status,          inclusion: { in: %w[pending in_flight done failed] }
+  validates :attempts,        numericality: { greater_than_or_equal_to: 0 }
+  validates :next_attempt_at, presence: true
 
   def next_backoff
     BACKOFF_SCHEDULE[attempts] || BACKOFF_SCHEDULE.last
@@ -108,7 +118,8 @@ end
 
 # app/central/audit/notification_audit.rb
 class NotificationAudit < ApplicationRecord
-  validates :correlation_id, :status, presence: true
+  validates :correlation_id, presence: true
+  validates :status,         presence: true
 end
 ```
 
@@ -119,19 +130,37 @@ end
 ```ruby
 FactoryBot.define do
   factory :dispatch_queue do
-    association :notification_event
+    event_id        { 1 }   # referencia simple, sin asociación AR (ver ADL-005)
     priority        { 'standard' }
     status          { 'pending' }
     attempts        { 0 }
     next_attempt_at { Time.current }
+
+    trait :in_flight do
+      status    { 'in_flight' }
+      locked_at { Time.current }
+    end
+
+    trait :failed do
+      status        { 'failed' }
+      attempts      { DispatchQueue::MAX_ATTEMPTS }
+      failed_reason { 'sendgrid_5xx: 503' }
+    end
+
+    trait :done do
+      status   { 'done' }
+      attempts { 1 }
+    end
   end
 
   factory :notification_audit do
     correlation_id { SecureRandom.uuid }
     status         { 'enqueued' }
-    channel        { nil }
-    payload        { {} }
-    metadata       { {} }
+    channel        { 'email' }
+
+    trait :dispatched do status { 'dispatched' } end
+    trait :delivered  do status { 'delivered'  } end
+    trait :failed     do status { 'failed'     } end
   end
 end
 ```
