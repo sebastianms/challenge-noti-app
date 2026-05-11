@@ -153,3 +153,114 @@ Alarmas proactivas que podrían configurarse:
 \- sendgrid\_429\_rate  
 \- sendgrid\_down
 
+---
+
+# **Anexo A — Cómo la construimos: Spec-Driven Development en la práctica**
+
+En esta sección quiero contar **el proceso** detrás del código, no la solución técnica. Antes de empezar, una aclaración importante: **este trabajo no lo hice solo**. Lo construí en colaboración con un asistente IA basado en un modelo de lenguaje grande (Claude), operando como pair programmer asíncrono bajo mi dirección. Yo dirigía las decisiones de producto y los trade-offs arquitectónicos; el asistente ejecutaba los pasos de la metodología, redactaba artefactos, escribía código y proponía alternativas. La intención del anexo es dejar trazabilidad de nuestra dinámica de trabajo, qué decisiones tomamos a meta-nivel y qué situaciones aprendí en el camino. No reemplaza al README ni a los ADLs; los complementa.
+
+## **A.1. Metodología: Spec-Driven Development (SDD)**
+
+Construimos la aplicación usando una metodología que invierte el orden tradicional "código → documentación": **las especificaciones son fuente de verdad y el código las expresa**, no al revés. Antes de escribir una línea de Ruby redactábamos documentos que describían el qué, el porqué y el cómo de la feature, con criterios de éxito medibles. Solo cuando esos documentos cerraban empezábamos a programar.
+
+Cada feature la recorrimos por el mismo ciclo:
+
+```
+Constitution → Specify → Clarify → Plan → Tasks → Implement → Replanning
+```
+
+| Fase | Producto | Objetivo |
+| :---- | :---- | :---- |
+| Constitution | `mission.md`, `roadmap.md`, `tech-stack.md` | Carta fundacional del proyecto: misión, fases del roadmap y stack. Restringe todas las decisiones posteriores. |
+| Specify | `spec.md` + checklist de calidad | QUÉ y POR QUÉ, sin mencionar tecnología. User stories priorizadas (P1/P2/P3), requerimientos funcionales testeables, criterios de éxito medibles. |
+| Clarify | Bloque "Clarifications" dentro del spec | Resolución estructurada de ambigüedades antes de planificar. Máximo cinco preguntas dirigidas, una por ambigüedad relevante. |
+| Plan | `plan.md`, `research.md`, `data-model.md`, `contracts/`, `quickstart.md` | CÓMO. Trade-offs evaluados, alternativas descartadas con justificación, contratos de interfaz, escenarios de validación end-to-end. |
+| Tasks | `tasks.md` | Lista ejecutable: cada tarea con ID, ruta de archivo exacta, marcador `[P]` si es paralelizable y label `[USn]` para asociarla a una user story. |
+| Implement | Código + tests + ADLs | Ejecución por bloques (Setup → Foundational → US1 → US2 → … → Polish). Cada bloque cierra con un "Block Checkpoint" antes de avanzar. |
+| Replanning | Auditoría read-only | Validación cross-feature: lo que dicen los specs vs. lo que existe en disco, roadmap vs. realidad, ADLs faltantes. Se corre entre features. |
+
+La pieza más valiosa fueron los **Block Checkpoints**: al cerrar cada bloque de tareas ejecutábamos secuencialmente *lint sin warnings → suite de tests verde con cobertura ≥ 90% → revisión de Clean Code → ADL si la decisión era nueva o contradecía uno previo → commit pequeño y temático → push*. La regla de oro que fijé fue **"lint y tests primero, commit después"**: nunca diferir warnings a "lo arreglo después", porque CI los bloquea igualmente y el ida-y-vuelta de fixes triviales destruye foco.
+
+Los **Architectural Decision Logs (ADLs)** son documentos cortos en `.design-logs/` que registran cada decisión técnica no obvia con cuatro secciones fijas: Contexto · Decisión · Alternativas consideradas · Consecuencias positivas y negativas. Funcionan como memoria institucional: meses después, un nuevo integrante puede entender por qué se eligió `SKIP LOCKED` sobre Redis sin tener que reconstruir el debate.
+
+## **A.2. Las cinco features y su orden**
+
+Descompusimos el roadmap en *shippable slices* — cada feature deja la plataforma en un estado funcional y demostrable. El orden lo dicté estrictamente por dependencias (no se puede auditar lo que no se envía; no se puede filtrar lo que no se decide):
+
+| Feature | Foco | DoD verificado |
+| :---- | :---- | :---- |
+| 001 — foundational-api | `AbstractNotification` + idempotencia SHA256 + `notification_events` particionado | Una invocación crea exactamente una fila; segunda invocación en misma ventana retorna `:duplicate` |
+| 002 — email-dispatch | Broker (`dispatch_queue` + Worker con `SKIP LOCKED`) + EmailChannel/SendgridAdapter + auditoría `enqueued → dispatched → delivered` | Email llega, `correlation_id` propaga vía header y `custom_args` |
+| 003 — audit-query | `AuditSearch` con filtros + endpoint Hotwire `/admin/audits` + webhook async SendGrid con verificación Ed25519 + `PartitionManager` | Soporte responde "¿por qué Juan no recibió X?" en segundos |
+| 004 — rules-engine | `RulesEngine` (rate limit + cooldown + digest) + `RuleCache` con invalidación sincrónica + `PendingDigest` + `DigestScheduler` | Stakeholders ajustan reglas sin redeploy; aplican en ≤ 5 min |
+| 005 — blacklist-bounces | `BlacklistEvaluator` pre-reglas + auto-blacklist desde hard bounce/dropped/spamreport + UI `/admin/blacklist` | Destinatario bloqueado nunca recibe; hard bounce → blacklist en ≤ 30 s |
+
+Cada feature reusó componentes de las anteriores. La 005 toca menos código nuevo del que aparenta: aprovechamos `RecipientNormalizer` (001), `WebhookEventWorker` (003), `NotificationAudit` particionado (003), HTTP Basic auth (003) y `Decision/SendResult` (004).
+
+## **A.3. Dinámica de colaboración humano + asistente IA**
+
+El trabajo lo llevamos adelante como **pair programming asíncrono**: yo cumplía el rol de driver de producto, arquitecto y decisor de trade-offs, y el asistente IA ejecutaba los pasos de la metodología produciendo artefactos (specs, código, tests, ADLs, commits). El asistente operaba con permisos para leer y escribir archivos y ejecutar comandos en el repo local; yo validaba en cada frontera.
+
+Reglas que fui imponiendo y mantuvimos durante todo el proceso:
+
+1. **Yo decido, la IA ejecuta.** Ante ambigüedades, el asistente NO inventaba: me presentaba 2-4 opciones con la recomendada destacada y el reasoning del trade-off, y esperaba mi respuesta. Las clarificaciones críticas las resolvíamos upfront en la fase Clarify para evitar retrabajo en plan/tasks.
+
+2. **Confirmación explícita en cada frontera.** Yo decía "si" / "sigamos" entre fase y fase. Esto evitó arrancar bloques de tareas sin alineamiento. El asistente nunca avanzaba al siguiente bloque sin mi validación previa.
+
+3. **Commits pequeños y temáticos.** Cada bloque generaba un commit con prefijo `feat|fix|refactor|docs|chore(NNN-feature/bloque): descripción`. Ningún commit cruza features. El historial es legible como una narrativa: `git log --oneline` cuenta el proceso.
+
+4. **Idioma: español neutro.** Toda la comunicación, specs, mensajes de commit y ADLs los escribimos en español. Código y nombres de archivo en inglés. Esta separación permite que la documentación sea accesible al stakeholder y el código mantenga consistencia con el ecosistema técnico.
+
+5. **No backwards-compatibility shims.** Cuando un cambio rompía algo (por ejemplo, agregar `notification_type` a `notification_audit` en feature 004), cambiábamos todo el código de una vez. No quedaron `# removed in v2` ni renames de variables a `_unused`. El historial de Git basta.
+
+## **A.4. Situaciones notables**
+
+Las siguientes son las situaciones que más nos enseñaron sobre el proceso y el stack:
+
+**1. Mismatch de versión de `pg_dump` en CI (feature 003).** Las migraciones corrían localmente con PG 17 pero CI tenía `postgresql-client-16`. El error era oscuro: `pg_dump: server version: 17.9 (Debian); pg_dump version: 16.13`. Fix: agregamos instalación explícita de `postgresql-client-17` en el workflow antes de `db:migrate`. Lección: pinear la versión del cliente, no solo del server.
+
+**2. `travel_to` no afecta a `CLOCK_TIMESTAMP()` (feature 004).** El test del `DigestScheduler` intentaba "avanzar 5 minutos" con `ActiveSupport::Testing::TimeHelpers#travel`, pero PG ignoraba el time-stub porque `CLOCK_TIMESTAMP()` se evalúa server-side. Fix: en lugar de stubbear tiempo, **movimos los datos** (`PendingDigest.update_all(dispatch_at: 1.second.ago)`). Lección: el cliente Ruby puede manipular el tiempo en su proceso, no en el de Postgres. Documentado en ADL-004.
+
+**3. CHECK constraint vs. validación AR redundante (features 004 y 005).** En varios casos el spec exigía constraints a nivel DB (UNIQUE, CHECK), y la pregunta era si duplicar la validación en el modelo AR. Decisión recurrente que tomamos: **sí, defense-in-depth**. La DB protege contra bugs; el modelo da mensajes legibles en la UI. Acepté la duplicación porque cada capa tiene un propósito distinto.
+
+**4. JSONB snapshot vs. FK en `pending_digests` (feature 004).** Cuando un item queda esperando consolidación, la regla que lo originó puede borrarse. Evaluamos tres alternativas: `ON DELETE CASCADE` (viola FR-010), `ON DELETE SET NULL` (huérfano sin contexto), `ON DELETE RESTRICT` (UX confuso). Elegí **JSONB snapshot inline**, sin FK. Documentado en ADL-009. Lección: la integridad referencial estricta no siempre es la respuesta correcta; a veces el snapshot de valor es más fiel al modelo de negocio.
+
+**5. Webhook unificado vs. controllers separados (features 003 y 005).** El roadmap original mencionaba `Webhooks::SendgridBouncesController`. En feature 003 ya habíamos construido un webhook unificado (`POST /webhooks/sendgrid`) con verificación Ed25519 que procesa todos los tipos de eventos. Crear un controller separado en feature 005 habría sido duplicación. Decidí **extender** `WebhookEventWorker#process_event` con una rama `hard_failure?`. Documentado en R3 de `005-blacklist-bounces/research.md`. Lección: el roadmap es un documento vivo; replanificar es legítimo cuando el aprendizaje invalida una decisión previa.
+
+**6. Replanning detecta un nombre de carpeta inconsistente.** Al cerrar feature 004 corrimos una auditoría cross-feature. Detectó que parte de la documentación interna hablaba de `app/central/auditing/` cuando el código real vive en `app/central/audit/` (singular). No lo marcamos como error de implementación: el código es la fuente de verdad, lo que actualizamos fueron las notas de referencia. Lección: Replanning no es para reescribir código, es para reconciliar especificaciones con realidad.
+
+**7. ADLs como memoria de decisiones.** Acumulamos nueve Architectural Decision Logs (`ADL-001` a `ADL-009` en `.design-logs/`, con `ADL-010` en feature 005). Los que más volvimos a consultar fueron ADL-005 (`SKIP LOCKED` como mecanismo de claiming, que terminamos reusando tres veces: worker de email, worker de webhook, scheduler de digests) y ADL-001 (elección de la clave de particionamiento por ventana de idempotencia). Lección: un ADL bien escrito nos ahorró horas de debate semanas después; el costo de escribirlo es de 10 minutos.
+
+## **A.5. Métricas del proceso**
+
+Al cerrar feature 004 (Phase 5 del roadmap):
+
+| Métrica | Valor |
+| :---- | :---- |
+| Features completadas | 4 (001, 002, 003, 004) + 005 en progreso |
+| Tasks ejecutadas | 166 sobre 166 (39 + 36 + 46 + 45) |
+| Specs en `specs/` | 5 features × (spec + plan + research + data-model + contracts + quickstart + tasks) ≈ 35 documentos |
+| ADLs documentados | 9 (de baja velocidad de cambio: ~2 por feature) |
+| Tests RSpec | 293 ejemplos · 100% de líneas (482/482) |
+| Lint warnings | 0 en 124 archivos Ruby |
+| Brakeman + bundler-audit | 0 issues |
+| Commits | ~50, agrupados por bloque y feature |
+| Tiempo aproximado | 4 sesiones de trabajo intensivo, sin retrabajo significativo |
+
+La métrica más relevante para SDD no es ninguna de esas: es **cero retrabajo de spec**. Ningún `spec.md` lo reescribimos tras empezar a implementar. Las clarificaciones las atajamos en la fase Clarify; los trade-offs no obvios los dejamos como ADL. Los bugs que encontramos durante implementación fueron de código, no de diseño.
+
+## **A.6. Qué haríamos distinto la próxima vez**
+
+- **Generar el ADL antes del primer commit del bloque**, no después. Cuando el commit ya está hecho, el contexto se diluye; escribir el ADL "fresco" es más fiel a las alternativas realmente evaluadas.
+- **Empezar el benchmark de SC-005 desde el primer prototipo**, no en Polish. Si el índice está mal diseñado, descubrirlo en la penúltima tarea cuesta más que descubrirlo al principio.
+- **Documentar el `[NEEDS CLARIFICATION]` aunque la resolución sea trivial.** Por más obvio que parezca un default, dejarlo escrito en `Assumptions` evita preguntas idénticas en features posteriores.
+- **Más Replannings, no solo entre features.** Al menos uno a la mitad de cada user story P1 para detectar deriva temprana.
+
+## **A.7. Conclusión**
+
+SDD no nos eliminó la complejidad — la **trasladó hacia adelante**, al momento donde es más barata de resolver. Cada decisión técnica importante quedó explícita en un ADL; cada cambio en el código tiene una spec que lo justifica; cada test cubre un Functional Requirement testeable. El resultado es un repositorio donde un nuevo integrante puede leer `specs/mission.md → roadmap.md → 00N-feature/spec.md` y reconstruir el porqué de cada línea de código, sin recurrir a tribal knowledge.
+
+Vale la pena cerrar con una reflexión sobre la colaboración con IA: el asistente no reemplazó mi rol de arquitecto ni de decisor, lo **amplificó**. La velocidad para producir specs detallados, ejecutar tests, leer y modificar muchos archivos a la vez, y mantener la disciplina del Block Checkpoint sin saltearse pasos fue mucho mayor que la que hubiera tenido trabajando solo. Pero las decisiones que importan — qué priorizar, qué trade-off aceptar, cuándo replanificar — siguieron siendo mías. La IA propone, el humano dispone. Esa división de roles fue lo que mantuvo la coherencia del proyecto a lo largo de cinco features.
+
+La aplicación está terminada **en su comportamiento mínimo viable** (Parte 1 + Parte 2 del enunciado, con la phase de blacklist en construcción al momento de redacción de este anexo). Las phases siguientes del roadmap (UI Admin completa, observabilidad, hardening) son evolución natural sobre la misma base, sin reescritura.
+
