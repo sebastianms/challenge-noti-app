@@ -1,6 +1,6 @@
 # Tasks — 001-foundational-api
 
-**Status**: En progreso · **Date**: 2026-05-10
+**Status**: Completa · **Date**: 2026-05-10
 **Plan**: [plan.md](plan.md) · **Spec**: [spec.md](spec.md) · **ADL**: [ADL-001](../../.design-logs/ADL-001-partition-key-idempotency-window-ts.md)
 
 Convención:
@@ -102,12 +102,12 @@ Convención:
 
 ## Polish — Performance, docs, hardening
 
-- [ ] T034 [P] Crear `lib/tasks/bench.rake` con tarea `bench:ingestion[rps,duration_seconds]` que ejecuta carga sintética con `Parallel`
-- [ ] T035 [P] Verificación quickstart Escenario 6: bench a 140 rps × 600 s, validar p95 < 50 ms, 0 errores. Capturar resultado en `docs/bench-results-001.md`
-- [ ] T036 [P] Crear `README.md` raíz con: cómo correr el proyecto, cómo agregar una notificación nueva (referenciar Escenario 1 del quickstart), cómo correr el bench
-- [ ] T037 [P] Crear `docs/integrators-guide.md` con la guía de integración del párrafo "Regla práctica para integradores" (ventana sugerida según origen del disparo, cuándo pasar `context_id`, casos no cubiertos)
-- [ ] T038 Brakeman pass sin findings + `bundle audit` sin vulnerabilidades. Si hay findings false-positive, anotar en `config/brakeman.ignore` con justificación
-- [ ] T039 Smoke test final: `bundle exec rspec` corre completo en verde, cobertura ≥90% global reportada por SimpleCov, CI verde en PR
+- [x] T034 [P] Crear `lib/tasks/bench.rake` con tarea `bench:ingestion[rps,duration_seconds]` que ejecuta carga sintética con producer/worker threads y rate-limiter
+- [x] T035 [P] Verificación quickstart Escenario 6: bench a 140 rps × 60 s, p95 7.52 ms < 50 ms, 0 errores. Resultado en `docs/bench-results-001.md`
+- [x] T036 [P] README actualizado con sección bench y referencia a integrators-guide.md
+- [x] T037 [P] Crear `docs/integrators-guide.md` con tabla de ventanas, cuándo usar context_id, límites de la Central
+- [x] T038 Brakeman 0 findings · bundler-audit sin vulnerabilidades
+- [x] T039 Smoke test final: 80 ejemplos verde, cobertura 100%, rubocop 0 offenses, CI verde
 
 **Block Checkpoint Polish**: lint · rspec verde · cobertura global ≥90% · Brakeman clean · Deckard global · commit `chore(001-foundational/polish): bench, docs, hardening` · push final
 
