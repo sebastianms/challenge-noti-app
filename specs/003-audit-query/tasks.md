@@ -59,14 +59,14 @@ Convención:
 **Goal**: buscar por destinatario, status, fechas (combinables) con paginación.
 **Test independiente**: 60 audits creados, filtro `status=failed` retorna 50 en página 1 + total=60.
 
-- [ ] T019 [US2] Extender `app/central/audit/audit_search.rb`: soportar `recipient`, `status`, `from`, `to`, `source`, `page`, `per_page` (cap 50). Devolver objeto `Result` con `items`, `total`, `page`, `per_page`, `has_next?`
-- [ ] T020 [P] [US2] Test `spec/central/audit/audit_search_spec.rb` (modo filtros): cada filtro individual, combinación AND, paginación con LIMIT/OFFSET, cap de per_page, orden DESC — 8 ejemplos
-- [ ] T021 [US2] Crear `app/controllers/admin/audits_controller.rb` con `http_basic_authenticate_with` desde env vars + acción `index` que delega a `AuditSearch` y renderiza `index.html.erb`
-- [ ] T022 [P] [US2] Crear vista `app/views/admin/audits/index.html.erb` con form de filtros + tabla de resultados + paginación (links a `?page=N`)
-- [ ] T023 [P] [US2] Crear parcial `app/views/admin/audits/_row.html.erb` con columnas `created_at`, `correlation_id`, `recipient_canonical`, `status`, `source`, `channel`
-- [ ] T024 [P] [US2] Test `spec/controllers/admin/audits_controller_spec.rb`: 401 sin auth · 200 con auth válido · render incluye filtros aplicados · paginación correcta — 6 ejemplos
-- [ ] T025 [US2] Test de integración `spec/integration/audit_search_spec.rb`: setup de 60 envíos sintéticos · filtros combinados verifican cardinalidad y orden — 4 ejemplos
-- [ ] T026 [US2] Verificación quickstart Escenarios 2, 7, 8
+- [x] T019 [US2] Extender `app/central/audit/audit_search.rb`: soportar `recipient`, `status`, `from`, `to`, `source`, `page`, `per_page` (cap 50). Devolver objeto `Result` con `items`, `total`, `page`, `per_page`, `has_next?`
+- [x] T020 [P] [US2] Test `spec/central/audit/audit_search_spec.rb` (modo filtros): cada filtro individual, combinación AND, paginación con LIMIT/OFFSET, cap de per_page, orden DESC — 8 ejemplos
+- [x] T021 [US2] Crear `app/controllers/admin/audits_controller.rb` con `http_basic_authenticate_with` desde env vars + acción `index` que delega a `AuditSearch` y renderiza `index.html.erb`
+- [x] T022 [P] [US2] Crear vista `app/views/admin/audits/index.html.erb` con form de filtros + tabla de resultados + paginación (links a `?page=N`)
+- [x] T023 [P] [US2] Crear parcial `app/views/admin/audits/_row.html.erb` con columnas `created_at`, `correlation_id`, `recipient_canonical`, `status`, `source`, `channel`
+- [x] T024 [P] [US2] Test `spec/controllers/admin/audits_controller_spec.rb`: 401 sin auth · 200 con auth válido · render incluye filtros aplicados · paginación correcta — 6 ejemplos
+- [x] T025 [US2] Test de integración `spec/integration/audit_search_spec.rb`: setup de 60 envíos sintéticos · filtros combinados verifican cardinalidad y orden — 4 ejemplos
+- [x] T026 [US2] Verificación quickstart Escenarios 2, 7, 8
 
 **Block Checkpoint US2**: lint · rspec verde · cobertura ≥90% en `app/controllers/admin/` y AuditSearch · Deckard · commit `feat(003-audit/us2): filtros + paginación + endpoint Hotwire`
 

@@ -1,0 +1,59 @@
+<h1>Auditoría de notificaciones</h1>
+
+<%= form_with url: admin_audits_path, method: :get, local: true do |f| %>
+  <fieldset>
+    <legend>Filtros</legend>
+    <p>
+      <%= f.label :correlation_id %>
+      <%= f.text_field :correlation_id, value: @filters[:correlation_id] %>
+    </p>
+    <p>
+      <%= f.label :recipient %>
+      <%= f.text_field :recipient, value: @filters[:recipient] %>
+    </p>
+    <p>
+      <%= f.label :status %>
+      <%= f.text_field :status, value: @filters[:status] %>
+    </p>
+    <p>
+      <%= f.label :source %>
+      <%= f.text_field :source, value: @filters[:source] %>
+    </p>
+    <p>
+      <%= f.label :from, "Desde" %>
+      <%= f.datetime_local_field :from, value: @filters[:from] %>
+    </p>
+    <p>
+      <%= f.label :to, "Hasta" %>
+      <%= f.datetime_local_field :to, value: @filters[:to] %>
+    </p>
+    <p><%= f.submit "Buscar" %></p>
+  </fieldset>
+<% end %>
+
+<p>Total: <strong><%= @total %></strong> · Página <%= @page %> · <%= @per_page %> por página</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>created_at</th>
+      <th>correlation_id</th>
+      <th>recipient</th>
+      <th>status</th>
+      <th>source</th>
+      <th>channel</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= render partial: "row", collection: @items, as: :audit %>
+  </tbody>
+</table>
+
+<nav>
+  <% if @page > 1 %>
+    <%= link_to "« Anterior", admin_audits_path(@filters.merge(page: @page - 1)) %>
+  <% end %>
+  <% if @has_next %>
+    <%= link_to "Siguiente »", admin_audits_path(@filters.merge(page: @page + 1)) %>
+  <% end %>
+</nav>
