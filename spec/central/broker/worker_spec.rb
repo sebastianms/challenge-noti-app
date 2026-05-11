@@ -55,6 +55,40 @@ RSpec.describe Worker, type: :model do
       expect(job.reload.status).to eq("pending")
       expect(job.reload.attempts).to eq(1)
     end
+
+    context "when all retry attempts are exhausted" do
+      before do
+        stub_request(:post, "https://api.sendgrid.com/v3/mail/send")
+          .to_return(status: 503, body: "", headers: {})
+        job.update!(attempts: DispatchQueue::MAX_ATTEMPTS - 1)
+      end
+
+      it "marks the job as failed after MAX_ATTEMPTS transient failures" do
+        Worker.process_batch
+        expect(job.reload.status).to eq("failed")
+        expect(job.reload.attempts).to eq(DispatchQueue::MAX_ATTEMPTS)
+        expect(job.reload.failed_reason).to be_present
+      end
+    end
+
+    it "does not re-process a permanently failed job" do
+      job.update!(status: "failed")
+      expect { Worker.process_batch }.not_to change(NotificationAudit, :count)
+    end
+
+    context "when Sendgrid returns a permanent error (400)" do
+      before do
+        stub_request(:post, "https://api.sendgrid.com/v3/mail/send")
+          .to_return(status: 400, body: '{"errors":[]}', headers: {})
+      end
+
+      it "marks the job as failed immediately without incrementing attempts" do
+        Worker.process_batch
+        expect(job.reload.status).to eq("failed")
+        expect(job.reload.attempts).to eq(0)
+        expect(job.reload.failed_reason).to be_present
+      end
+    end
   end
 
   describe ".process_batch SKIP LOCKED", :threads do

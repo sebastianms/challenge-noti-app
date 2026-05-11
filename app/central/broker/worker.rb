@@ -57,13 +57,15 @@ class Worker
   end
 
   private_class_method def self.backoff_job(job_id, reason)
-    job = DispatchQueue.find(job_id)
+    job           = DispatchQueue.find(job_id)
+    next_attempts = job.attempts + 1
+    exhausted     = next_attempts >= DispatchQueue::MAX_ATTEMPTS
     job.update!(
-      status:         "pending",
-      attempts:       job.attempts + 1,
+      status:          exhausted ? "failed" : "pending",
+      attempts:        next_attempts,
       next_attempt_at: Time.current + job.next_backoff,
-      locked_at:      nil,
-      failed_reason:  reason
+      locked_at:       nil,
+      failed_reason:   reason
     )
   end
 
