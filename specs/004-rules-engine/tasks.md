@@ -109,12 +109,12 @@ Convención:
 
 ## Polish — Docs, ADLs, hardening
 
-- [ ] T040 [P] Crear `.design-logs/ADL-008-rails-cache-rule-strategy.md`: decisión cache Rails.cache vs alternativas (memoría proceso, Redis directo), TTL 5 min, invalidación explícita, single-node vs multi-node tradeoffs
-- [ ] T041 [P] Crear `.design-logs/ADL-009-rule-snapshot-pending-digests.md`: por qué snapshot JSONB en lugar de FK (sobrevivir borrado de regla, FR-010)
-- [ ] T042 [P] Ampliar `.design-logs/ADL-005-skip-locked-job-claiming.md`: nota "Extensión 2026-05-12 — `pending_digests` con `DigestScheduler` reusa el patrón"
-- [ ] T043 [P] Actualizar `README.md`: sección "Motor de reglas" con CRUD desde consola Rails (`NotificationRule.create!`), explicación de campos, ejemplo de digest. Agregar `digest_scheduler:run` a tabla de rake tasks
-- [ ] T044 [P] Actualizar `specs/roadmap.md`: marcar Phase 5 como `[DONE]` con descripción real de implementación
-- [ ] T045 Smoke test final: suite completa verde · cobertura ≥90% global · rubocop 0 offenses · Brakeman 0 findings · bundler-audit clean
+- [x] T040 [P] Crear `.design-logs/ADL-008-rails-cache-rule-strategy.md`: decisión cache Rails.cache vs alternativas (memoría proceso, Redis directo), TTL 5 min, invalidación explícita, single-node vs multi-node tradeoffs
+- [x] T041 [P] Crear `.design-logs/ADL-009-rule-snapshot-pending-digests.md`: por qué snapshot JSONB en lugar de FK (sobrevivir borrado de regla, FR-010)
+- [x] T042 [P] Ampliar `.design-logs/ADL-005-skip-locked-job-claiming.md`: nota "Extensión 2026-05-12 — `pending_digests` con `DigestScheduler` reusa el patrón"
+- [x] T043 [P] Actualizar `README.md`: sección "Motor de reglas" con CRUD desde consola Rails (`NotificationRule.create!`), explicación de campos, ejemplo de digest. Agregar `digest_scheduler:run` a tabla de rake tasks
+- [x] T044 [P] Actualizar `specs/roadmap.md`: marcar Phase 5 como `[DONE]` con descripción real de implementación
+- [x] T045 Smoke test final: suite completa verde · cobertura ≥90% global · rubocop 0 offenses · Brakeman 0 findings · bundler-audit clean
 
 **Block Checkpoint Polish**: lint · rspec verde · cobertura global ≥90% · Brakeman clean · Deckard global · commit `chore(004-rules-engine/polish): ADL-008/009, ADL-005 ext, README, roadmap, smoke` · push final
 

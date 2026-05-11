@@ -45,3 +45,7 @@ Verificado con el spec `:threads` (`concurrent workers claim disjoint sets of jo
 ## Extensión 2026-05-11 — webhook_events (feature 003-audit-query)
 
 El mismo patrón se reusa para reclamar jobs de `webhook_events` en `WebhookEventWorker.process_batch`. La query selecciona filas `WHERE status = 'pending'`, marca `processing` con `attempts = attempts + 1` y aplica `FOR UPDATE SKIP LOCKED` para soportar múltiples workers simultáneos sin doble procesamiento. La única diferencia con `DispatchQueue` es que no usa backoff exponencial: si el procesador falla, el job se marca `failed` con `failed_reason` (la verificación de firma ocurre antes de persistir, así que las fallas reales son raras y suelen requerir intervención manual).
+
+## Extensión 2026-05-12 — pending_digests (feature 004-rules-engine)
+
+El patrón se reusa por tercera vez en `DigestScheduler.process_batch`. La query reclama filas de `pending_digests WHERE status = 'pending' AND dispatch_at <= CLOCK_TIMESTAMP()`, las marca `consolidating`, agrupa por `(notification_type, recipient_canonical)` y crea 1 fila en `dispatch_queue` por grupo. Múltiples instancias del scheduler corren sin riesgo de consolidar el mismo grupo dos veces. Validado con spec `:threads` que reclama 6 items con 2 schedulers paralelos.

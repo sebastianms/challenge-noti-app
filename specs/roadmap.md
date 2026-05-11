@@ -67,17 +67,21 @@ Implementado en feature [003-audit-query](003-audit-query/):
 
 ---
 
-## Phase 5 — User Story 3: Motor de reglas + cache (R5)
+## Phase 5 — Motor de reglas + cache (R5) `[DONE]`
 
 > Stakeholders ajustan frecuencia/canales/agrupación sin redeploy.
 
-- [ ] Tabla `notification_rules` (tipo, canales habilitados, max_per_day, cooldown, digest, priority)
-- [ ] `Central::Decisioning::RulesEngine` + `Decision` value object (`:dispatch | :digest | :filter_rule`)
-- [ ] Cache con `Rails.cache` (`:memory_store`, TTL 5 min) + invalidación al guardar regla
-- [ ] Pipeline integrado: ingesta → decisión → broker (con audit en cada paso)
-- [ ] `pending_digests` + `Central::Broker::DigestScheduler` (worker periódico que fusiona items por ventana)
+Implementado en feature [004-rules-engine](004-rules-engine/):
 
-**DoD**: cambiar la regla de `WelcomeNotification` desde la consola Rails (max_per_day 3 → 1) se aplica en ≤ 5 min sin reiniciar workers; envíos extras quedan auditados con motivo `rate_limited`.
+- [x] Tabla `notification_rules` (tipo único, channels TEXT[], max_per_day, cooldown_seconds, digest_window_seconds, priority, enabled) con constraints CHECK y UNIQUE.
+- [x] `RulesEngine.decide(event:) → Decision` value object (`:dispatch | :digest | :filter`). Orden: disabled → rate_limited → cooldown → digest → dispatch. Sin regla → dispatch (compat).
+- [x] `RuleCache` con `Rails.cache`, TTL 5 min, invalidación sincrónica via `after_save`/`after_destroy` (ver [ADL-008](../.design-logs/ADL-008-rails-cache-rule-strategy.md)). Cache hit rate verificado: 20 sends mismo tipo → ≤ 1 query.
+- [x] Pipeline integrado: `EventBuilder` invoca `RulesEngine`; según `Decision.kind` → `Enqueuer` o `PendingDigest.create!` o audit `filtered` con `metadata.reason`/`metadata.rule_id`.
+- [x] `pending_digests` con `rule_snapshot` JSONB (ver [ADL-009](../.design-logs/ADL-009-rule-snapshot-pending-digests.md)) + `DigestScheduler.process_batch` con `FOR UPDATE SKIP LOCKED` (ADL-005 reusado). Agrupa por `(notification_type, recipient_canonical)` y consolida en 1 fila en `dispatch_queue` por grupo.
+- [x] Vista `/admin/audits` extendida con columnas `reason` y `rule_id`.
+- [x] Rake `digest_scheduler:run[batch_size,sleep_interval]` para foreground.
+
+**Esquema agregado**: 2 tablas nuevas (`notification_rules`, `pending_digests`) + columna `notification_type` en `notification_audit` con índice cubriente. Cobertura suite: 100%.
 
 ---
 

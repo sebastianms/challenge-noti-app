@@ -158,6 +158,40 @@ end
 ChannelRegistry.register(:sms, SmsChannel.new)
 ```
 
+## Motor de reglas
+
+Cada notificación puede tener una regla en `notification_rules` que controla rate limit, cooldown, agrupación (digest) y canales habilitados. Sin regla, el comportamiento es el de Phase 3 (despacho sin restricciones).
+
+Desde la consola Rails:
+
+```ruby
+NotificationRule.create!(
+  notification_type:     "birthday",
+  channels:              [ "email" ],
+  max_per_day:           1,          # máximo 1 envío por destinatario en 24h
+  cooldown_seconds:      60,         # 1 min entre envíos al mismo destinatario
+  digest_window_seconds: 300,        # agrupa 5 min antes de despachar
+  priority:              "standard", # o "critical" | "bulk"
+  enabled:               true
+)
+```
+
+Campos clave:
+
+| Campo | Comportamiento |
+|-------|----------------|
+| `channels = NULL` | sin restricción |
+| `channels = []`   | bloqueado (audit `filtered`, reason `disabled`) |
+| `max_per_day`     | rate limit por `recipient_canonical` en ventana 24h |
+| `cooldown_seconds`| tiempo mínimo entre envíos al mismo destinatario |
+| `digest_window_seconds` | si presente, agrupa envíos en `pending_digests` |
+| `priority`        | override del priority del llamante |
+| `enabled = false` | regla pausada (tratada como inexistente) |
+
+El cache de reglas (`Rails.cache`, TTL 5 min) garantiza que cambios se reflejen en ≤ 5 minutos sin reiniciar workers. La invalidación es sincrónica vía callbacks `after_save`/`after_destroy` (ver [ADL-008](.design-logs/ADL-008-rails-cache-rule-strategy.md)).
+
+Items agrupables se persisten en `pending_digests` con un snapshot de la regla; sobreviven al borrado de la regla original (ver [ADL-009](.design-logs/ADL-009-rule-snapshot-pending-digests.md)). El worker `DigestScheduler` los consolida en 1 envío por grupo `(notification_type, recipient_canonical)`.
+
 ## Auditoría consultable
 
 Cada envío deja un timeline de filas en `notification_audit` (`enqueued → dispatched → delivered | failed`). El endpoint `/admin/audits` permite consultarlo desde el navegador.
@@ -204,6 +238,7 @@ Variable requerida:
 |---------|-------------|
 | `bin/rails worker:run[batch_size,sleep_interval]` | Despacha jobs de `dispatch_queue` (email) |
 | `bin/rails webhook_worker:run[batch_size,sleep_interval]` | Procesa eventos pendientes de `webhook_events` |
+| `bin/rails "digest_scheduler:run[batch_size,sleep_interval]"` | Consolida items de `pending_digests` vencidos en 1 envío por grupo |
 | `bin/rails partitions:rotate` | Crea la partición del próximo mes y dropea las más viejas que `AUDIT_RETENTION_MONTHS` |
 
 ## Para integradores
