@@ -34,5 +34,20 @@ RSpec.describe Enqueuer do
       Enqueuer.enqueue(event_id: event_id, correlation_id: correlation_id, priority: :critical)
       expect(DispatchQueue.last.priority).to eq("critical")
     end
+
+    it "stamps source=internal on the audit row" do
+      Enqueuer.enqueue(event_id: event_id, correlation_id: correlation_id)
+      expect(NotificationAudit.last.source).to eq("internal")
+    end
+
+    it "persists recipient_canonical when provided" do
+      Enqueuer.enqueue(event_id: event_id, correlation_id: correlation_id, recipient_canonical: "alice@example.com")
+      expect(NotificationAudit.last.recipient_canonical).to eq("alice@example.com")
+    end
+
+    it "leaves recipient_canonical nil when omitted" do
+      Enqueuer.enqueue(event_id: event_id, correlation_id: correlation_id)
+      expect(NotificationAudit.last.recipient_canonical).to be_nil
+    end
   end
 end

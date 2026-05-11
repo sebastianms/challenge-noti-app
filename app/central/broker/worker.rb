@@ -80,10 +80,12 @@ class Worker
 
   private_class_method def self.create_audit(event, status, channel)
     NotificationAudit.create!(
-      correlation_id: event.correlation_id,
-      event_id:       event.attributes["id"],
-      status:         status,
-      channel:        channel
+      correlation_id:      event.correlation_id,
+      event_id:            event.attributes["id"],
+      status:              status,
+      channel:             channel,
+      source:              "internal",
+      recipient_canonical: event.recipient_canonical
     )
   end
 end

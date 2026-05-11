@@ -87,7 +87,12 @@ class EventBuilder
 
       if result.rows.any?
         correlation_id, event_id = result.rows.first
-        Enqueuer.enqueue(event_id: event_id.to_i, correlation_id: correlation_id, priority: @priority)
+        Enqueuer.enqueue(
+          event_id:            event_id.to_i,
+          correlation_id:      correlation_id,
+          recipient_canonical: attrs[:recipient_canonical],
+          priority:            @priority
+        )
         SendResult.created(correlation_id: correlation_id)
       else
         existing_id = conn.exec_query(

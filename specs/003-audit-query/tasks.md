@@ -25,14 +25,14 @@ Convención:
 
 > Bloquea US1, US2, US3, US4: sin las columnas nuevas y la tabla `webhook_events` ningún user story corre.
 
-- [ ] T005 Crear migración `db/migrate/20260511000001_extend_notification_audit_with_source_and_recipient.rb` con `ADD COLUMN recipient_canonical TEXT`, `ADD COLUMN source TEXT NOT NULL DEFAULT 'internal' CHECK (source IN ('internal','sendgrid_webhook'))`, índice parcial sobre `recipient_canonical` (WHERE NOT NULL), índice compuesto `(status, created_at)`
-- [ ] T006 Crear migración `db/migrate/20260511000002_create_webhook_events.rb` con DDL completo de `data-model.md`: tabla `webhook_events` + índice parcial sobre `status IN ('pending','processing')`
-- [ ] T007 [P] Extender `app/central/audit/notification_audit.rb`: agregar `validates :source, inclusion: { in: %w[internal sendgrid_webhook] }`
-- [ ] T008 [P] Crear modelo `app/central/webhooks/webhook_event.rb` con validaciones AR (`payload`, `signature`, `signature_ts`, status enum)
-- [ ] T009 [P] Crear `spec/factories/webhook_events.rb` con factory base + traits (`processing`, `processed`, `failed`)
-- [ ] T010 [P] Actualizar `spec/factories/notification_audits.rb` para incluir traits `source: :sendgrid_webhook` y `recipient_canonical`
-- [ ] T011 [P] Test `spec/db/notification_audit_schema_spec.rb` (ampliar): valida columnas `source` y `recipient_canonical` con sus constraints, índices presentes en `pg_indexes`
-- [ ] T012 [P] Test `spec/db/webhook_events_schema_spec.rb`: columnas, CHECK status, índice parcial presente — 6 ejemplos
+- [x] T005 Crear migración `db/migrate/20260511000001_extend_notification_audit_with_source_and_recipient.rb` con `ADD COLUMN recipient_canonical TEXT`, `ADD COLUMN source TEXT NOT NULL DEFAULT 'internal' CHECK (source IN ('internal','sendgrid_webhook'))`, índice parcial sobre `recipient_canonical` (WHERE NOT NULL), índice compuesto `(status, created_at)`
+- [x] T006 Crear migración `db/migrate/20260511000002_create_webhook_events.rb` con DDL completo de `data-model.md`: tabla `webhook_events` + índice parcial sobre `status IN ('pending','processing')`
+- [x] T007 [P] Extender `app/central/audit/notification_audit.rb`: agregar `validates :source, inclusion: { in: %w[internal sendgrid_webhook] }`
+- [x] T008 [P] Crear modelo `app/central/webhooks/webhook_event.rb` con validaciones AR (`payload`, `signature`, `signature_ts`, status enum)
+- [x] T009 [P] Crear `spec/factories/webhook_events.rb` con factory base + traits (`processing`, `processed`, `failed`)
+- [x] T010 [P] Actualizar `spec/factories/notification_audits.rb` para incluir traits `source: :sendgrid_webhook` y `recipient_canonical`
+- [x] T011 [P] Test `spec/db/notification_audit_schema_spec.rb` (ampliar): valida columnas `source` y `recipient_canonical` con sus constraints, índices presentes en `pg_indexes`
+- [x] T012 [P] Test `spec/db/webhook_events_schema_spec.rb`: columnas, CHECK status, índice parcial presente — 6 ejemplos
 
 **Block Checkpoint Foundational**: migraciones corren sin error · `rspec spec/db/` verde · modelos AR válidos · commit `feat(003-audit/foundational): schema (audit columns + webhook_events)`
 
@@ -43,12 +43,12 @@ Convención:
 **Goal**: dado un `correlation_id`, retornar el timeline completo ordenado.
 **Test independiente**: insertar 3 entradas de audit para un correlation_id + 5 para otros; query retorna exactamente las 3 ordenadas por `created_at ASC`.
 
-- [ ] T013 [US1] Modificar `app/central/broker/enqueuer.rb`: setear `source: "internal"` y `recipient_canonical: event.recipient_canonical` en el INSERT de audit
-- [ ] T014 [P] [US1] Modificar `app/central/broker/worker.rb`: setear `source: "internal"` y `recipient_canonical` (resuelto via `event.recipient_canonical`) en los audits `dispatched`/`delivered`/`failed`
-- [ ] T015 [US1] Actualizar `spec/central/broker/enqueuer_spec.rb` y `spec/central/broker/worker_spec.rb`: verificar que las nuevas filas de audit tienen `source = "internal"` y `recipient_canonical` poblado
-- [ ] T016 [US1] Crear `app/central/audit/audit_search.rb` con interfaz `AuditSearch.new(correlation_id:).call → Array<NotificationAudit>` ordenado por `created_at ASC`
-- [ ] T017 [P] [US1] Test `spec/central/audit/audit_search_spec.rb` (modo correlation_id): retorna 3 entradas ordenadas · lista vacía cuando no existe · ignora otros filtros si correlation_id presente — 4 ejemplos
-- [ ] T018 [US1] Verificación quickstart Escenario 1
+- [x] T013 [US1] Modificar `app/central/broker/enqueuer.rb`: setear `source: "internal"` y `recipient_canonical: event.recipient_canonical` en el INSERT de audit
+- [x] T014 [P] [US1] Modificar `app/central/broker/worker.rb`: setear `source: "internal"` y `recipient_canonical` (resuelto via `event.recipient_canonical`) en los audits `dispatched`/`delivered`/`failed`
+- [x] T015 [US1] Actualizar `spec/central/broker/enqueuer_spec.rb` y `spec/central/broker/worker_spec.rb`: verificar que las nuevas filas de audit tienen `source = "internal"` y `recipient_canonical` poblado
+- [x] T016 [US1] Crear `app/central/audit/audit_search.rb` con interfaz `AuditSearch.new(correlation_id:).call → Array<NotificationAudit>` ordenado por `created_at ASC`
+- [x] T017 [P] [US1] Test `spec/central/audit/audit_search_spec.rb` (modo correlation_id): retorna 3 entradas ordenadas · lista vacía cuando no existe · ignora otros filtros si correlation_id presente — 4 ejemplos
+- [x] T018 [US1] Verificación quickstart Escenario 1
 
 **Block Checkpoint US1**: lint · rspec verde · cobertura ≥90% en `app/central/audit/` · Deckard · commit `feat(003-audit/us1): AuditSearch por correlation_id + audit source/recipient`
 

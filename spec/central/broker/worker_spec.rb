@@ -26,6 +26,13 @@ RSpec.describe Worker, type: :model do
       expect(statuses).to include("dispatched", "delivered")
     end
 
+    it "stamps source=internal and recipient_canonical on worker-created audits" do
+      Worker.process_batch
+      audits = NotificationAudit.where(event_id: event_rid)
+      expect(audits.pluck(:source).uniq).to eq([ "internal" ])
+      expect(audits.pluck(:recipient_canonical).uniq).to eq([ event.recipient_canonical ])
+    end
+
     it "does not pick up jobs that are already done" do
       job.update!(status: "done")
       expect { Worker.process_batch }.not_to change(NotificationAudit, :count)
