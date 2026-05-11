@@ -5,4 +5,5 @@ class NotificationAudit < ApplicationRecord
 
   validates :correlation_id, presence: true
   validates :status,         presence: true
+  validates :source, inclusion: { in: %w[internal sendgrid_webhook] }
 end

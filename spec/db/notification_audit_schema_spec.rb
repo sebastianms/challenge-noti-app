@@ -66,5 +66,45 @@ RSpec.describe "notification_audit schema" do
     it "has status not null" do
       expect(columns["status"].null).to be false
     end
+
+    it "has source not null with default internal" do
+      col = columns["source"]
+      expect(col).not_to be_nil
+      expect(col.null).to be false
+      expect(col.default).to eq("internal")
+    end
+
+    it "has recipient_canonical as nullable text" do
+      col = columns["recipient_canonical"]
+      expect(col).not_to be_nil
+      expect(col.null).to be true
+    end
+
+    it "enforces source CHECK constraint" do
+      expect do
+        connection.execute("INSERT INTO notification_audit_2026_05 (correlation_id, status, source) VALUES (gen_random_uuid(), 'enqueued', 'invalid_source')")
+      end.to raise_error(ActiveRecord::StatementInvalid, /check/i)
+    end
+  end
+
+  describe "new indexes" do
+    it "has partial index on recipient_canonical where not null" do
+      result = connection.execute(<<~SQL)
+        SELECT indexname, indexdef FROM pg_indexes
+        WHERE tablename LIKE 'notification_audit%'
+          AND indexdef ILIKE '%recipient_canonical%'
+          AND indexdef ILIKE '%where%'
+      SQL
+      expect(result.count).to be >= 1
+    end
+
+    it "has composite index on (status, created_at)" do
+      result = connection.execute(<<~SQL)
+        SELECT indexname FROM pg_indexes
+        WHERE tablename LIKE 'notification_audit%'
+          AND indexdef ILIKE '%status%created_at%'
+      SQL
+      expect(result.count).to be >= 1
+    end
   end
 end
