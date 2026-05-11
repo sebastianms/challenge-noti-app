@@ -85,6 +85,7 @@ class Worker
       status:              status,
       channel:             channel,
       source:              "internal",
+      notification_type:   event.notification_type,
       recipient_canonical: event.recipient_canonical
     )
   end

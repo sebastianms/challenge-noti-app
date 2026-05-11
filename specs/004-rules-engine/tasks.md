@@ -48,16 +48,16 @@ Convención:
 **Goal**: insertar la capa de decisión antes del Enqueuer. Eventos con regla restrictiva quedan filtrados; sin regla, dispatch normal.
 **Test independiente**: crear regla `max_per_day=1`, disparar 2 envíos al mismo destinatario → 1 enqueued + 1 filtered(rate_limited).
 
-- [ ] T018 [US1] Crear `app/central/decisioning/rate_limit_evaluator.rb` con `.exceeded?(rule, event) → bool` consultando `notification_audit` con índice cubriente, ventana 24h, status IN ('dispatched','delivered','enqueued')
-- [ ] T019 [P] [US1] Crear `app/central/decisioning/cooldown_evaluator.rb` con `.in_cooldown?(rule, event) → bool` consultando última fila en `notification_audit` con `created_at >= now - rule.cooldown_seconds`
-- [ ] T020 [US1] Crear `app/central/decisioning/rules_engine.rb` con `.decide(event:) → Decision`. Orden de evaluación: sin regla → dispatch; channels=[] → filter(disabled); rate_limited → filter; cooldown → filter; digest_window → digest; else → dispatch(rule_id, priority)
-- [ ] T021 [US1] Modificar `app/central/ingestion/event_builder.rb`: reemplazar `Enqueuer.enqueue(...)` por `RulesEngine.decide(event:)` + dispatch según `Decision.kind`. Para `:filter` crear audit `filtered` con metadata `{reason, rule_id}`. Para `:dispatch` poblar audit con `notification_type` y respetar `decision.priority` si presente
-- [ ] T022 [US1] Modificar `app/central/broker/enqueuer.rb` y `app/central/broker/worker.rb` para que las audit entries que crean también incluyan `notification_type` (lookup del evento)
-- [ ] T023 [P] [US1] Test `spec/central/decisioning/rate_limit_evaluator_spec.rb`: max_per_day=3 + 2 audits → false · max_per_day=3 + 3 audits → true · audit fuera de ventana no cuenta · solo audits con status terminal cuentan · max_per_day=nil → false — 6 ejemplos
-- [ ] T024 [P] [US1] Test `spec/central/decisioning/cooldown_evaluator_spec.rb`: cooldown=60 + envío hace 30s → true · cooldown=60 + envío hace 120s → false · sin audits previos → false · cooldown_seconds=nil → false — 5 ejemplos
-- [ ] T025 [P] [US1] Test `spec/central/decisioning/rules_engine_spec.rb`: sin regla → dispatch · channels=[] → filter(disabled) · rate_limited → filter(rate_limited) · cooldown → filter(cooldown) · digest_window → digest · regla normal → dispatch con priority — 8 ejemplos
-- [ ] T026 [US1] Test `spec/integration/rules_pipeline_spec.rb` (escenarios 1, 2, 3 del quickstart): rate limit fuerza filtered · channels=[] → no enqueue · sin regla → comportamiento idéntico Phase 3 — 4 ejemplos
-- [ ] T027 [US1] Verificar que `spec/integration/email_dispatch_spec.rb` (existente) sigue verde sin cambios — compatibilidad hacia atrás
+- [x] T018 [US1] Crear `app/central/decisioning/rate_limit_evaluator.rb` con `.exceeded?(rule, event) → bool` consultando `notification_audit` con índice cubriente, ventana 24h, status IN ('dispatched','delivered','enqueued')
+- [x] T019 [P] [US1] Crear `app/central/decisioning/cooldown_evaluator.rb` con `.in_cooldown?(rule, event) → bool` consultando última fila en `notification_audit` con `created_at >= now - rule.cooldown_seconds`
+- [x] T020 [US1] Crear `app/central/decisioning/rules_engine.rb` con `.decide(event:) → Decision`. Orden de evaluación: sin regla → dispatch; channels=[] → filter(disabled); rate_limited → filter; cooldown → filter; digest_window → digest; else → dispatch(rule_id, priority)
+- [x] T021 [US1] Modificar `app/central/ingestion/event_builder.rb`: reemplazar `Enqueuer.enqueue(...)` por `RulesEngine.decide(event:)` + dispatch según `Decision.kind`. Para `:filter` crear audit `filtered` con metadata `{reason, rule_id}`. Para `:dispatch` poblar audit con `notification_type` y respetar `decision.priority` si presente
+- [x] T022 [US1] Modificar `app/central/broker/enqueuer.rb` y `app/central/broker/worker.rb` para que las audit entries que crean también incluyan `notification_type` (lookup del evento)
+- [x] T023 [P] [US1] Test `spec/central/decisioning/rate_limit_evaluator_spec.rb`: max_per_day=3 + 2 audits → false · max_per_day=3 + 3 audits → true · audit fuera de ventana no cuenta · solo audits con status terminal cuentan · max_per_day=nil → false — 6 ejemplos
+- [x] T024 [P] [US1] Test `spec/central/decisioning/cooldown_evaluator_spec.rb`: cooldown=60 + envío hace 30s → true · cooldown=60 + envío hace 120s → false · sin audits previos → false · cooldown_seconds=nil → false — 5 ejemplos
+- [x] T025 [P] [US1] Test `spec/central/decisioning/rules_engine_spec.rb`: sin regla → dispatch · channels=[] → filter(disabled) · rate_limited → filter(rate_limited) · cooldown → filter(cooldown) · digest_window → digest · regla normal → dispatch con priority — 8 ejemplos
+- [x] T026 [US1] Test `spec/integration/rules_pipeline_spec.rb` (escenarios 1, 2, 3 del quickstart): rate limit fuerza filtered · channels=[] → no enqueue · sin regla → comportamiento idéntico Phase 3 — 4 ejemplos
+- [x] T027 [US1] Verificar que `spec/integration/email_dispatch_spec.rb` (existente) sigue verde sin cambios — compatibilidad hacia atrás
 
 **Block Checkpoint US1**: lint · rspec verde · cobertura ≥90% en `app/central/decisioning/` · Deckard · commit `feat(004-rules-engine/us1): RulesEngine + rate limit + cooldown + disabled`
 

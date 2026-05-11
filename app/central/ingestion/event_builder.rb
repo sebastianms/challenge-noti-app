@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "ostruct"
+
 class EventBuilder
   def self.build(notification_class:, recipient:, context: {}, priority: :standard)
     new(notification_class:, recipient:, context:, priority:).call
@@ -87,11 +89,11 @@ class EventBuilder
 
       if result.rows.any?
         correlation_id, event_id = result.rows.first
-        Enqueuer.enqueue(
-          event_id:            event_id.to_i,
+        apply_decision(
           correlation_id:      correlation_id,
-          recipient_canonical: attrs[:recipient_canonical],
-          priority:            @priority
+          event_id:            event_id.to_i,
+          notification_type:   attrs[:notification_type],
+          recipient_canonical: attrs[:recipient_canonical]
         )
         SendResult.created(correlation_id: correlation_id)
       else
@@ -106,6 +108,37 @@ class EventBuilder
 
     log_result(send_result, attrs)
     send_result
+  end
+
+  def apply_decision(correlation_id:, event_id:, notification_type:, recipient_canonical:)
+    event = OpenStruct.new(
+      correlation_id:      correlation_id,
+      notification_type:   notification_type,
+      recipient_canonical: recipient_canonical
+    )
+    decision = RulesEngine.decide(event: event)
+
+    case decision.kind
+    when :dispatch
+      Enqueuer.enqueue(
+        event_id:            event_id,
+        correlation_id:      correlation_id,
+        notification_type:   notification_type,
+        recipient_canonical: recipient_canonical,
+        priority:            decision.priority || @priority
+      )
+    when :filter
+      NotificationAudit.create!(
+        correlation_id:      correlation_id,
+        event_id:            event_id,
+        status:              "filtered",
+        channel:             "email",
+        source:              "internal",
+        notification_type:   notification_type,
+        recipient_canonical: recipient_canonical,
+        metadata:            { reason: decision.reason, rule_id: decision.rule_id }
+      )
+    end
   end
 
   def log_result(result, attrs)
