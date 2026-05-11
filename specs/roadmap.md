@@ -1,6 +1,6 @@
 # Roadmap — Central de Notificaciones
 
-**Estado**: Draft v1 · **Fecha**: 2026-05-10
+**Estado**: En progreso · **Actualizado**: 2026-05-11
 
 Cada fase es un **shippable slice**: deja la plataforma en un estado funcional y demostrable. El orden respeta dependencias (no se puede auditar lo que no se envía; no se puede filtrar lo que no se decide).
 
@@ -32,33 +32,38 @@ Cada fase es un **shippable slice**: deja la plataforma en un estado funcional y
 
 ---
 
-## Phase 3 — User Story 1: Despacho de email funcional (R2, R3, R7)
+## Phase 3 — Email dispatch: broker + canal + auditoría (R2, R3, R7)  `[DONE]`
 
 > El equipo de Producto puede demostrar que un equipo integra una notificación nueva en < 1 hora y que el correo llega.
 
-- [ ] Tabla `dispatch_queue` con priority partitions
-- [ ] `Central::Broker::Enqueuer` (de event → queue)
-- [ ] `Central::Broker::Worker` con loop `SKIP LOCKED` + backoff (1m / 5m / 25m → DLQ)
-- [ ] `Central::Channels::ChannelStrategy` interfaz + `ChannelRegistry`
-- [ ] `EmailChannel` + `SendgridAdapter` (sandbox/mock para test, real con `SENDGRID_API_KEY`)
-- [ ] `X-Correlation-ID` propagado al provider
-- [ ] Smoke test: envío end-to-end con sandbox de Sendgrid
+- [x] Tabla `dispatch_queue` (priority, status, backoff, SKIP LOCKED index parcial)
+- [x] Tabla `notification_audit` particionada por mes + partición inicial (ver ADL-003: FK omitida por limitación de tablas particionadas)
+- [x] `Enqueuer` — INSERT atómico en `dispatch_queue` + audit `enqueued` dentro de la transacción de ingesta
+- [x] `Worker` — `process_batch` con `FOR UPDATE SKIP LOCKED` + `CLOCK_TIMESTAMP()` (ADL-004), backoff 1m/5m/25m, DLQ tras MAX_ATTEMPTS (ADL-005)
+- [x] `ChannelStrategy` (interfaz) + `ChannelRegistry` (auto-registro en carga de archivo)
+- [x] `EmailChannel` + `SendgridAdapter` vía `Net::HTTP`: classifica 2xx/4xx/5xx → `:delivered`/`PermanentError`/`TransientError`
+- [x] `correlation_id` propagado como header HTTP `X-Correlation-ID` **y** como `custom_args` en el payload JSON (persiste en webhooks de SendGrid)
+- [x] Tests end-to-end: `spec/integration/email_dispatch_spec.rb` — happy path, idempotencia, X-Correlation-ID
+- [x] `bin/rails worker:run[batch_size,sleep_interval]` para foreground
+- [x] ADL-004 (CLOCK_TIMESTAMP), ADL-005 (SKIP LOCKED), ADL-006 (WebMock)
+- [x] Coverage badge commiteado al repo desde CI
 
-**DoD**: enviar `FooNotification.send` produce un correo verificable (en sandbox o real); agregar un canal nuevo (ej. `LogChannel` para demo) no requiere cambiar `FooNotification`.
+**DoD**: `BirthdayNotification.send("a@b.com")` → job en `dispatch_queue` → `Worker.process_batch` → status `done`, audits `[enqueued, dispatched, delivered]`; agregar un canal nuevo no requiere cambiar `AbstractNotification` ni `EventBuilder`.
 
 ---
 
-## Phase 4 — User Story 2: Auditoría inmutable consultable (R6)
+## Phase 4 — Auditoría consultable (R6)
 
 > Soporte puede responder "¿por qué Juan no recibió X?" en segundos.
 
-- [ ] Tabla `notification_audit` particionada por día + GIN sobre `payload` y `metadata`
-- [ ] `Central::Audit::AuditLogger` con transiciones `received → validated → enqueued → dispatched → delivered|failed`
-- [ ] `Central::Audit::PartitionManager` (crear partición del día siguiente, dropear ≥ N días)
-- [ ] Búsqueda por `correlation_id`, `recipient`, `subject`, rango de fechas, status
-- [ ] Endpoint Hotwire de búsqueda con paginación (sin UI completa todavía)
+> **Nota**: la tabla `notification_audit` y sus transiciones básicas (`enqueued → dispatched → delivered/failed`) quedaron completas en Phase 3. Esta fase agrega la capa de consulta y operación.
 
-**DoD**: tras 1.000 envíos sintéticos, búsqueda por `correlation_id` retorna timeline completo en < 200 ms p95.
+- [ ] `PartitionManager` — crea la partición mensual siguiente, dropea particiones con antigüedad > N meses
+- [ ] Búsqueda por `correlation_id`, `recipient_canonical`, rango de fechas, status
+- [ ] Endpoint Hotwire de búsqueda con paginación (sin UI completa todavía)
+- [ ] Webhook handler `POST /webhooks/sendgrid` — recibe eventos de entrega/bounce de SendGrid, busca por `custom_args.correlation_id` y agrega audit entry
+
+**DoD**: tras 1.000 envíos sintéticos, búsqueda por `correlation_id` retorna timeline completo en < 200 ms p95; un bounce de SendGrid se registra en `notification_audit` en < 30 s.
 
 ---
 
