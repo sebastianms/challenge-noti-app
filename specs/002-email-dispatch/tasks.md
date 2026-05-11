@@ -82,17 +82,13 @@ Convención:
 
 **Goal**: fallo → backoff 1m/5m/25m → DLQ con `failed_reason`. Sin reintentos para errores permanentes.
 
-- [ ] T026 [US2] Ampliar `app/central/broker/worker.rb`: manejar `TransientError` (backoff + re-pending) vs `PermanentError` (DLQ inmediato). Definir módulo `Central::Broker::Errors` con `TransientError` y `PermanentError`
-- [ ] T027 [P] [US2] Test `spec/central/broker/worker_spec.rb` (ampliar):
-  - 1 fallo transitorio → attempts=1, status=pending, next_attempt_at ≈ now+1min
-  - 3 fallos consecutivos → status=failed, attempts=3, `failed_reason` documentado
-  - 4to intento no ocurre (job permanece failed)
-  - error permanente (400) → DLQ en el primer intento
-  — 6 ejemplos adicionales
-- [ ] T028 [P] [US2] Test `spec/central/broker/dispatch_queue_spec.rb`:
-  - `next_backoff` retorna los valores correctos por nivel de attempts
-  - `permanent_failure?` es true cuando `attempts >= MAX_ATTEMPTS`
-  — 4 ejemplos
+- [x] T026 [US2] Ampliar `app/central/broker/worker.rb`: `backoff_job` verifica MAX_ATTEMPTS tras incrementar — si exhausto → failed (DLQ), si no → pending. `TransientError`/`PermanentError` ya existían como clases standalone (módulo omitido, sin valor sin namespacing)
+- [x] T027 [P] [US2] Test `spec/central/broker/worker_spec.rb` (ampliar):
+  - agotamiento de reintentos (attempts=MAX-1 + 503) → failed, attempts=MAX
+  - job con status=failed no vuelve a procesarse
+  - PermanentError 400 → DLQ inmediato, attempts no se incrementa
+  — 3 ejemplos adicionales
+- [x] T028 [P] [US2] Test `spec/central/broker/dispatch_queue_spec.rb`: ya cubierto en bloque Foundational con 7 ejemplos (validaciones, next_backoff en 4 niveles, permanent_failure? × 2)
 
 **Block Checkpoint US2**: lint · rspec verde · commit `feat(002-email/us2): backoff + DLQ`
 
