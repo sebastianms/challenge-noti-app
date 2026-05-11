@@ -13,29 +13,30 @@ Convenciones:
 
 ## Setup (S)
 
-- [ ] T001 Agregar gems `devise ~> 4.9`, `chartkick ~> 5.1`, `groupdate ~> 6.4` al `Gemfile` y `bundle install`
-- [ ] T002 [P] Generar instalación de Devise: `bin/rails g devise:install` (mailer config en `config/environments/development.rb`; en este proyecto sin SMTP basta con `config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }`)
-- [ ] T003 [P] Configurar Devise: `config.paranoid = true`, `config.maximum_attempts = 5`, `config.unlock_in = 10.minutes`, `config.password_length = 12..128`, `config.mailer_sender = "noreply@noti-central.local"` en `config/initializers/devise.rb`
-- [ ] T004 [P] Importmap pin para Chart.js: `bin/importmap pin chartkick chart.js` y `import "chartkick"; import "Chart.bundle"` en `app/javascript/application.js`
-- [ ] T005 [P] Crear `config/initializers/mock_data_feature.rb` con `Rails.application.config.allow_mock_data_feature = ENV.fetch("ALLOW_MOCK_DATA_FEATURE", "true") != "false"`
+- [x] T001 Agregar gems `devise ~> 4.9`, `chartkick ~> 5.1`, `groupdate ~> 6.4` al `Gemfile` y `bundle install`
+- [x] T002 [P] Generar instalación de Devise: `bin/rails g devise:install` (mailer config en `config/environments/development.rb`; en este proyecto sin SMTP basta con `config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }`)
+- [x] T003 [P] Configurar Devise: `config.paranoid = true`, `config.maximum_attempts = 5`, `config.unlock_in = 10.minutes`, `config.password_length = 12..128`, `config.mailer_sender = "noreply@noti-central.local"` en `config/initializers/devise.rb`
+- [x] T004 [P] Importmap pin para Chart.js: `bin/importmap pin chartkick chart.js` y `import "chartkick"; import "Chart.bundle"` en `app/javascript/application.js`
+- [x] T005 [P] Crear `config/initializers/mock_data_feature.rb` con `Rails.application.config.allow_mock_data_feature = ENV.fetch("ALLOW_MOCK_DATA_FEATURE", "true") != "false"`
 
 ## Foundational (F) — bloquean cualquier US
 
-- [ ] T006 Migración `bin/rails g devise admin_user role:string` → renombrar timestamp a anterior a la hora actual; **antes de `db:migrate`** agregar manualmente `t.string :role, null: false` + extras de lockable (`failed_attempts`, `unlock_token`, `locked_at`) + trackable. Añadir índices únicos en `unlock_token` y `reset_password_token`.
-- [ ] T007 Migración `add_role_check_to_admin_users`: `ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_chk CHECK (role IN ('admin','product','support','engineering'))`.
-- [ ] T008 Migración `create_rule_changes`: tabla con `notification_rule_id` (FK SET NULL), `admin_user_id` (FK RESTRICT NOT NULL), `action` (CHECK IN), `before` jsonb, `after` jsonb, `changed_at` (default `clock_timestamp()`). 3 índices según data-model.
-- [ ] T009 [P] Modelo `app/models/admin_user.rb`: Devise modules + `validates :role, inclusion: { in: %w[admin product support engineering] }` + `validates :password, length: { minimum: 12 }` (cuando se setea).
-- [ ] T010 [P] Modelo `app/central/decisioning/rule_change.rb`: `belongs_to :notification_rule, optional: true`, `belongs_to :admin_user`, validaciones de invariantes (`action`/`before`/`after` coherentes).
-- [ ] T011 [P] Servicio `app/policies/admin/role_authorizer.rb` con `PERMISSIONS` hash y `self.allow?(role, section:)`.
-- [ ] T012 Configurar `devise_for :admin_users, path: "admin", controllers: { sessions: "admin/sessions" }, skip: [:registrations]` + `namespace :admin do ... end` en `config/routes.rb` con resources `dashboard`, `rules` (con `member { get :history }`), `mock_data` (only: [:create]).
-- [ ] T013 [P] `app/controllers/admin/base_controller.rb`: `before_action :authenticate_admin_user!`, `before_action :authorize_section!` con helper `controller_section` (devuelto por cada subclase). Render `errors/forbidden` con 403.
-- [ ] T014 [P] Layout `app/views/layouts/admin.html.erb` con menú lateral que itera permitidos del rol (`%w[dashboard rules].select { |s| RoleAuthorizer.allow?(...) }`).
-- [ ] T015 [P] Vistas error `app/views/errors/forbidden.html.erb` y `not_found.html.erb`.
-- [ ] T016 [P] Factory `spec/factories/admin_users.rb` con traits `:admin`, `:product`, `:support`, `:engineering`.
-- [ ] T017 [P] Factory `spec/factories/rule_changes.rb` con traits `:created`, `:updated`, `:deleted`.
-- [ ] T018 Spec `spec/policies/admin/role_authorizer_spec.rb` — matriz exhaustiva 4 roles × 3 secciones.
-- [ ] T019 [P] Spec `spec/models/admin_user_spec.rb` — validaciones (email único, role en whitelist, password ≥ 12).
-- [ ] T020 [P] Spec `spec/central/decisioning/rule_change_spec.rb` — invariantes action/before/after.
+- [x] T006 Migración `bin/rails g devise admin_user role:string` → renombrar timestamp a anterior a la hora actual; **antes de `db:migrate`** agregar manualmente `t.string :role, null: false` + extras de lockable (`failed_attempts`, `unlock_token`, `locked_at`) + trackable. Añadir índices únicos en `unlock_token` y `reset_password_token`.
+- [x] T007 Migración `add_role_check_to_admin_users`: `ALTER TABLE admin_users ADD CONSTRAINT admin_users_role_chk CHECK (role IN ('admin','product','support','engineering'))`.
+- [x] T008 Migración `create_rule_changes`: tabla con `notification_rule_id` (FK SET NULL), `admin_user_id` (FK RESTRICT NOT NULL), `action` (CHECK IN), `before` jsonb, `after` jsonb, `changed_at` (default `clock_timestamp()`). 3 índices según data-model.
+- [x] T008b Seed de usuarios dev: `db/seeds.rb` bloque idempotente que crea 3 admin_users si `Rails.env.development? || Rails.env.test?` — `admin@noti-central.local`, `product@noti-central.local`, `support@noti-central.local` todos con password `Admin12345678!` y sus roles correspondientes. Ejecutar `bin/rails db:seed` tras las migraciones.
+- [x] T009 [P] Modelo `app/models/admin_user.rb`: Devise modules + `validates :role, inclusion: { in: %w[admin product support engineering] }` + `validates :password, length: { minimum: 12 }` (cuando se setea).
+- [x] T010 [P] Modelo `app/central/decisioning/rule_change.rb`: `belongs_to :notification_rule, optional: true`, `belongs_to :admin_user`, validaciones de invariantes (`action`/`before`/`after` coherentes).
+- [x] T011 [P] Servicio `app/policies/admin/role_authorizer.rb` con `PERMISSIONS` hash y `self.allow?(role, section:)`.
+- [x] T012 Configurar `devise_for :admin_users, path: "admin", controllers: { sessions: "admin/sessions" }, skip: [:registrations]` + `namespace :admin do ... end` en `config/routes.rb` con resources `dashboard`, `rules` (con `member { get :history }`), `mock_data` (only: [:create]).
+- [x] T013 [P] `app/controllers/admin/base_controller.rb`: `before_action :authenticate_admin_user!`, `before_action :authorize_section!` con helper `controller_section` (devuelto por cada subclase). Render `errors/forbidden` con 403.
+- [x] T014 [P] Layout `app/views/layouts/admin.html.erb` con menú lateral que itera permitidos del rol (`%w[dashboard rules].select { |s| RoleAuthorizer.allow?(...) }`).
+- [x] T015 [P] Vistas error `app/views/errors/forbidden.html.erb` y `not_found.html.erb`.
+- [x] T016 [P] Factory `spec/factories/admin_users.rb` con traits `:admin`, `:product`, `:support`, `:engineering`.
+- [x] T017 [P] Factory `spec/factories/rule_changes.rb` con traits `:created`, `:updated`, `:deleted`.
+- [x] T018 Spec `spec/policies/admin/role_authorizer_spec.rb` — matriz exhaustiva 4 roles × 3 secciones.
+- [x] T019 [P] Spec `spec/models/admin_user_spec.rb` — validaciones (email único, role en whitelist, password ≥ 12).
+- [x] T020 [P] Spec `spec/central/decisioning/rule_change_spec.rb` — invariantes action/before/after.
 
 **Checkpoint F**: lint 0 · `rspec` verde (matriz + modelos) · commit `feat(006-admin-dashboard-rules/foundational): devise + role_authorizer + rule_changes`.
 

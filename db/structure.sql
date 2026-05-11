@@ -15,6 +15,51 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: admin_users; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.admin_users (
+    id bigint NOT NULL,
+    email character varying DEFAULT ''::character varying NOT NULL,
+    encrypted_password character varying DEFAULT ''::character varying NOT NULL,
+    role character varying NOT NULL,
+    reset_password_token character varying,
+    reset_password_sent_at timestamp(6) without time zone,
+    remember_created_at timestamp(6) without time zone,
+    sign_in_count integer DEFAULT 0 NOT NULL,
+    current_sign_in_at timestamp(6) without time zone,
+    last_sign_in_at timestamp(6) without time zone,
+    current_sign_in_ip character varying,
+    last_sign_in_ip character varying,
+    failed_attempts integer DEFAULT 0 NOT NULL,
+    unlock_token character varying,
+    locked_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT admin_users_role_chk CHECK (((role)::text = ANY ((ARRAY['admin'::character varying, 'product'::character varying, 'support'::character varying, 'engineering'::character varying])::text[])))
+);
+
+
+--
+-- Name: admin_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.admin_users_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: admin_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.admin_users_id_seq OWNED BY public.admin_users.id;
+
+
+--
 -- Name: ar_internal_metadata; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -308,6 +353,41 @@ ALTER SEQUENCE public.pending_digests_id_seq OWNED BY public.pending_digests.id;
 
 
 --
+-- Name: rule_changes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rule_changes (
+    id bigint NOT NULL,
+    notification_rule_id bigint,
+    admin_user_id bigint NOT NULL,
+    action character varying NOT NULL,
+    before jsonb,
+    after jsonb,
+    changed_at timestamp(6) without time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT rule_changes_action_chk CHECK (((action)::text = ANY ((ARRAY['created'::character varying, 'updated'::character varying, 'deleted'::character varying])::text[])))
+);
+
+
+--
+-- Name: rule_changes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.rule_changes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: rule_changes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.rule_changes_id_seq OWNED BY public.rule_changes.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -370,6 +450,13 @@ ALTER TABLE ONLY public.notification_events ATTACH PARTITION public.notification
 
 
 --
+-- Name: admin_users id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_users ALTER COLUMN id SET DEFAULT nextval('public.admin_users_id_seq'::regclass);
+
+
+--
 -- Name: dispatch_queue id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -412,10 +499,25 @@ ALTER TABLE ONLY public.pending_digests ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
+-- Name: rule_changes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rule_changes ALTER COLUMN id SET DEFAULT nextval('public.rule_changes_id_seq'::regclass);
+
+
+--
 -- Name: webhook_events id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.webhook_events ALTER COLUMN id SET DEFAULT nextval('public.webhook_events_id_seq'::regclass);
+
+
+--
+-- Name: admin_users admin_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.admin_users
+    ADD CONSTRAINT admin_users_pkey PRIMARY KEY (id);
 
 
 --
@@ -531,6 +633,14 @@ ALTER TABLE ONLY public.pending_digests
 
 
 --
+-- Name: rule_changes rule_changes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rule_changes
+    ADD CONSTRAINT rule_changes_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -600,6 +710,62 @@ CREATE INDEX idx_notification_events_recipient ON ONLY public.notification_event
 --
 
 CREATE INDEX idx_notification_events_status_created_at ON ONLY public.notification_events USING btree (status, created_at);
+
+
+--
+-- Name: idx_rule_changes_rule_time; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rule_changes_rule_time ON public.rule_changes USING btree (notification_rule_id, changed_at DESC);
+
+
+--
+-- Name: idx_rule_changes_time; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rule_changes_time ON public.rule_changes USING btree (changed_at DESC);
+
+
+--
+-- Name: idx_rule_changes_user_time; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rule_changes_user_time ON public.rule_changes USING btree (admin_user_id, changed_at DESC);
+
+
+--
+-- Name: index_admin_users_on_email; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_admin_users_on_email ON public.admin_users USING btree (email);
+
+
+--
+-- Name: index_admin_users_on_reset_password_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_admin_users_on_reset_password_token ON public.admin_users USING btree (reset_password_token);
+
+
+--
+-- Name: index_admin_users_on_unlock_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_admin_users_on_unlock_token ON public.admin_users USING btree (unlock_token);
+
+
+--
+-- Name: index_rule_changes_on_admin_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_rule_changes_on_admin_user_id ON public.rule_changes USING btree (admin_user_id);
+
+
+--
+-- Name: index_rule_changes_on_notification_rule_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_rule_changes_on_notification_rule_id ON public.rule_changes USING btree (notification_rule_id);
 
 
 --
@@ -841,6 +1007,22 @@ ALTER INDEX public.idx_notification_events_status_created_at ATTACH PARTITION pu
 
 
 --
+-- Name: rule_changes fk_rails_73c5ceade4; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rule_changes
+    ADD CONSTRAINT fk_rails_73c5ceade4 FOREIGN KEY (notification_rule_id) REFERENCES public.notification_rules(id) ON DELETE SET NULL;
+
+
+--
+-- Name: rule_changes fk_rails_e9c3e401cc; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rule_changes
+    ADD CONSTRAINT fk_rails_e9c3e401cc FOREIGN KEY (admin_user_id) REFERENCES public.admin_users(id) ON DELETE RESTRICT;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
@@ -851,6 +1033,9 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260512000003'),
 ('20260512000002'),
 ('20260512000001'),
+('20260511185532'),
+('20260511185531'),
+('20260511185530'),
 ('20260511000002'),
 ('20260511000001'),
 ('20260510000003'),
