@@ -34,10 +34,13 @@ Convención:
 - [x] T011 Crear migración `db/migrate/20260510000001_create_notification_events.rb` con DDL completo de `data-model.md`: tabla particionada por `idempotency_window_ts`, UNIQUE `(idempotency_hash, idempotency_window_ts)`, CHECKs, partición default inicial
 - [x] T012 Crear modelo `app/central/models/notification_event.rb` con `self.table_name = "notification_events"`, validaciones AR + scope `for_dispatch`
 - [x] T013 [P] Crear `spec/factories/notification_events.rb` con FactoryBot factory base + traits (sent, rejected, failed, user_id_recipient)
-- [ ] T014 [P] Test de la migración: `spec/db/notification_events_schema_spec.rb` valida estructura de columnas, presencia de constraints, particiones registradas en `pg_partitions`
-- [/] T015 Test directo de la UNIQUE constraint: `spec/central/models/notification_event_spec.rb` — archivo creado, pendiente correr (bloqueado: requiere `postgresql-client-16` para `db:schema:dump` con formato SQL)
+- [x] T014 [P] Test de la migración: `spec/db/notification_events_schema_spec.rb` valida estructura de columnas, presencia de constraints, particiones registradas en `pg_partitions` — 12 ejemplos verde
+- [x] T015 Test directo de la UNIQUE constraint: `spec/central/models/notification_event_spec.rb` — 11 ejemplos verde
 
-**Nota**: Se agregó `config.active_record.schema_format = :sql` en `application.rb` porque `schema.rb` no puede representar tablas particionadas (`PARTITION BY RANGE`). Requiere `postgresql-client-16` instalado en la máquina para que `db:schema:dump` funcione (`pg_dump`).
+**Notas de implementación**:
+- Se agregó `config.active_record.schema_format = :sql` → `db/structure.sql`. Ver [ADL-002](../../.design-logs/ADL-002-schema-format-sql.md).
+- Docker y CI actualizados a `postgres:17-alpine` para alinear con `pg_dump` v17 del sistema (Ubuntu 25.10). Ver [ADL-003](../../.design-logs/ADL-003-postgres-17.md) *(pendiente si se requiere*).
+- Autoload paths ampliados a `app/central/models` y `app/central/ingestion` para que Zeitwerk resuelva constantes sin namespace.
 
 **Block Checkpoint Foundational**: lint · rspec verde · cobertura ≥90% en módulo · ADL-001 ya creado · commit `feat(001-foundational/db): notification_events particionada por window_ts`
 

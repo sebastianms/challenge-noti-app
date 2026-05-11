@@ -19,6 +19,7 @@ end
 
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+  config.include ActiveSupport::Testing::TimeHelpers
 
   config.use_transactional_fixtures = false
   config.filter_rails_from_backtrace!

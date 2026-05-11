@@ -32,10 +32,14 @@ module ChallengeNotiApp
     config.autoload_paths += %W[
       #{config.root}/app/notifications
       #{config.root}/app/central
+      #{config.root}/app/central/models
+      #{config.root}/app/central/ingestion
     ]
     config.eager_load_paths += %W[
       #{config.root}/app/notifications
       #{config.root}/app/central
+      #{config.root}/app/central/models
+      #{config.root}/app/central/ingestion
     ]
 
     config.time_zone = "UTC"
