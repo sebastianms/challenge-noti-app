@@ -8,12 +8,12 @@
 | :---- | :---- | :---- |
 | Lenguaje | Ruby 3.4 | Compatible con Rails 8, mejoras de YJIT, sintaxis del enunciado original. |
 | Framework | Rails 8.0 | Monolito como mandata el enunciado; trae Hotwire, Solid Queue/Cache nativos, Propshaft. |
-| Base de datos | PostgreSQL 16 | Stack existente; `SKIP LOCKED`, JSONB+GIN, range partitioning declarativo. |
+| Base de datos | PostgreSQL 17 | Stack existente; `SKIP LOCKED`, JSONB+GIN, range partitioning declarativo. |
 | Cola/Broker | **Postgres-as-queue manual** (`SELECT … FOR UPDATE SKIP LOCKED`) | Fiel a la propuesta. Sin infra nueva. Strategy permite migrar a Kafka/SQS sin tocar a los integradores. |
 | Cache | `Rails.cache` con `:memory_store` (TTL 5 min) | Reglas y blacklist consultadas en cada envío; in-memory evita hop de red por cada decisión. Trade-off: consistencia eventual ≤ 5 min. |
 | Frontend Admin | Hotwire (Turbo + Stimulus) + ERB | Sin SPA; aprovecha back-office existente y SSO actual. |
 | Email | Sendgrid HTTP API | Mandato del enunciado. Adapter `EmailChannel` con sandbox para tests. |
-| Test | RSpec 6 + FactoryBot + SimpleCov (≥90%) + VCR (Sendgrid) | Cobertura objetivo 90% por bloque; VCR para integración determinista con Sendgrid. |
+| Test | RSpec 3 + FactoryBot + SimpleCov (≥90%) + WebMock (Sendgrid) | Cobertura objetivo 90% por bloque; WebMock para stubbing determinista de llamadas HTTP a Sendgrid. |
 | CI | GitHub Actions | Lint (RuboCop, Brakeman) + RSpec + cobertura por PR. |
 | Observabilidad | APM (New Relic-compatible) + Sentry + CloudWatch | APM para latencias y throughput; Sentry para errores; CloudWatch para auto-scaling de workers según queue depth. |
 | Infra | EC2 ASG (web + worker) + RDS Postgres (master + read replica) | Reutiliza infra existente. |
