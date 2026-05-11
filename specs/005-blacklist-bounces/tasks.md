@@ -26,11 +26,11 @@ Convenciones:
 
 > Bloqueante para US1 y US2. Implementa el evaluator y lo cablea en el `EventBuilder`.
 
-- [ ] T006 Crear `app/central/decisioning/blacklist_evaluator.rb` con `BlacklistEvaluator.match(event:, channel: "email")` ejecutando query única OR (ver R2 de research.md) y `LIMIT 1`. Predicado conveniencia `blacklisted?(...)`
-- [ ] T007 [P] Spec `spec/central/decisioning/blacklist_evaluator_spec.rb`: sin fila → nil · scope global matchea cualquier tipo/canal · scope=type matchea solo ese tipo · scope=channel matchea solo ese canal · múltiples filas → LIMIT 1 · casing del recipient → matchea por canonical (6 ejemplos)
-- [ ] T008 Extender `app/central/ingestion/event_builder.rb`: invocar `BlacklistEvaluator.match` después del check de duplicado y antes de `RulesEngine.decide`. Si matchea → audit `filtered` con `metadata: { reason: "blacklisted", blacklist_id, scope, target }` y retornar `SendResult.filtered`
-- [ ] T009 [P] Spec `spec/central/ingestion/event_builder_blacklist_spec.rb`: con blacklist matching → no se llama a `RulesEngine.decide` (mock) · audit registrado con reason=blacklisted · `dispatch_queue` vacío · sin blacklist → flujo normal continúa (4 ejemplos)
-- [ ] T010 Actualizar `config/application.rb` si hace falta autoload del nuevo archivo (`decisioning/` ya está en autoload_paths desde feature 004 — solo verificar)
+- [x] T006 Crear `app/central/decisioning/blacklist_evaluator.rb` con `BlacklistEvaluator.match(event:, channel: "email")` ejecutando query única OR (ver R2 de research.md) y `LIMIT 1`. Predicado conveniencia `blacklisted?(...)`
+- [x] T007 [P] Spec `spec/central/decisioning/blacklist_evaluator_spec.rb`: sin fila → nil · scope global matchea cualquier tipo/canal · scope=type matchea solo ese tipo · scope=channel matchea solo ese canal · múltiples filas → LIMIT 1 · casing del recipient → matchea por canonical (6 ejemplos)
+- [x] T008 Extender `app/central/ingestion/event_builder.rb`: invocar `BlacklistEvaluator.match` después del check de duplicado y antes de `RulesEngine.decide`. Si matchea → audit `filtered` con `metadata: { reason: "blacklisted", blacklist_id, scope, target }` y retornar `SendResult.filtered`
+- [x] T009 [P] Spec `spec/central/ingestion/event_builder_blacklist_spec.rb`: con blacklist matching → no se llama a `RulesEngine.decide` (mock) · audit registrado con reason=blacklisted · `dispatch_queue` vacío · sin blacklist → flujo normal continúa (4 ejemplos)
+- [x] T010 Actualizar `config/application.rb` si hace falta autoload del nuevo archivo (`decisioning/` ya está en autoload_paths desde feature 004 — solo verificar)
 
 **Block Checkpoint Foundational**: rubocop sin warnings · rspec verde · Deckard review · commit `feat(005-blacklist-bounces/foundational): BlacklistEvaluator + integración en EventBuilder`
 
