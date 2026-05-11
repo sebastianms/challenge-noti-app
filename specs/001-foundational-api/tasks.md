@@ -88,13 +88,13 @@ Convención:
 
 > Nota: la lógica ya queda implementada en US2; esta story agrega tests específicos y documenta la garantía como contrato observable.
 
-- [ ] T031 [P] [US3] Test `spec/central/ingestion/correlation_id_spec.rb`:
+- [x] T031 [P] [US3] Test `spec/central/ingestion/correlation_id_spec.rb`:
   - `r.correlation_id` matchea regex UUID estándar
   - dos `:created` distintos → correlation_ids distintos
   - `:created` seguido de `:duplicate` → mismos correlation_ids
   - `:rejected` → `correlation_id` es `nil`
-- [ ] T032 [P] [US3] Test de logging estructurado `spec/central/ingestion/logging_spec.rb`: cada `EventBuilder.build` emite un log JSON con `correlation_id`, `notification_type`, `state`, observable vía `Rails.logger` capturado en test
-- [ ] T033 [US3] Verificación quickstart Escenario 4
+- [x] T032 [P] [US3] Test de logging estructurado `spec/central/ingestion/logging_spec.rb`: cada `EventBuilder.build` emite un log JSON con `correlation_id`, `notification_type`, `state`, observable vía `Rails.logger` capturado en test
+- [x] T033 [US3] Verificación quickstart Escenario 4
 
 **Block Checkpoint US3**: lint · rspec verde · commit `feat(001-foundational/us3): correlation_id observable end-to-end`
 
