@@ -32,7 +32,7 @@ jobs:
         with:
           bundler-cache: true
       - name: Setup DB
-        run: bin/rails db:create db:migrate
+        run: bin/rails db:create db:schema:load
       - name: RSpec
         run: bundle exec rspec --format progress
       - name: Upload coverage
