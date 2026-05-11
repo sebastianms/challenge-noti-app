@@ -49,17 +49,19 @@ jobs:
           mkdir -p badges
           PCT=$(ruby -r json -e "puts JSON.parse(File.read('coverage/.last_run.json'))['result']['line'].round")
           if   [ "$PCT" -ge 90 ]; then COLOR="brightgreen"
-          elif [ "$PCT" -ge 80 ]; then COLOR="yellow"
+          elif [ "$PCT" -ge 80 ]; then COLOR="green"
+          elif [ "$PCT" -ge 70 ]; then COLOR="yellowgreen"
+          elif [ "$PCT" -ge 60 ]; then COLOR="yellow"
           else                         COLOR="red"
           fi
-          echo "{\"schemaVersion\":1,\"label\":\"Coverage\",\"message\":\"${PCT}%\",\"color\":\"${COLOR}\"}" \
-            > badges/coverage.json
+          curl -fsSL "https://img.shields.io/badge/coverage-${PCT}%25-${COLOR}.svg" \
+            -o badges/coverage.svg
       - name: Commit coverage badge
         if: github.ref == 'refs/heads/main'
         run: |
-          git config user.name  "GitHub Actions"
-          git config user.email "github-actions@github.com"
-          git add badges/coverage.json
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add badges/coverage.svg
           if ! git diff --staged --quiet; then
             git commit -m "chore(ci): update coverage badge [skip ci]"
             git push
