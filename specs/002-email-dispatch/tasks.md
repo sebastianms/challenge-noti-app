@@ -1,6 +1,6 @@
 # Tasks — 002-email-dispatch
 
-**Status**: En progreso · **Date**: 2026-05-10
+**Status**: Completa · **Date**: 2026-05-11
 **Plan**: [plan.md](plan.md) · **Spec**: [spec.md](spec.md) · **Data Model**: [data-model.md](data-model.md)
 
 Convención:
@@ -113,12 +113,12 @@ Convención:
 
 ## Polish — Hardening, docs, smoke test
 
-- [ ] T031 [P] Crear `lib/tasks/worker.rake` con `worker:run[batch_size,sleep_interval]` para ejecutar el Worker en foreground desde CLI
-- [ ] T032 [P] Crear `spec/support/sendgrid_stubs.rb` con helpers `stub_sendgrid_success` y `stub_sendgrid_error(status:)` reutilizables
-- [ ] T033 [P] Crear ADL-004 en `.design-logs/ADL-004-broker-dispatch-queue-skip-locked.md`
-- [ ] T034 [P] Crear ADL-005 en `.design-logs/ADL-005-webmock-http-stubbing.md`
-- [ ] T035 Smoke test final: todos los ejemplos de `quickstart.md` cubiertos por specs · `bundle exec rubocop` 0 offenses · cobertura ≥90% en módulos nuevos · Brakeman 0 findings
-- [ ] T036 Actualizar README con sección "Canales" y mención del Worker rake task
+- [x] T031 [P] Crear `lib/tasks/worker.rake` con `worker:run[batch_size,sleep_interval]` para ejecutar el Worker en foreground desde CLI
+- [x] T032 [P] Crear `spec/support/sendgrid_stubs.rb` con helpers `stub_sendgrid_success` y `stub_sendgrid_error(status:)` reutilizables
+- [x] T033 [P] Crear ADL-004 en `.design-logs/ADL-004-clock-timestamp-vs-now-in-skip-locked.md` (CLOCK_TIMESTAMP vs NOW en contexto transaccional) y ADL-005 en `.design-logs/ADL-005-skip-locked-job-claiming.md` (FOR UPDATE SKIP LOCKED)
+- [x] T034 [P] Crear ADL-006 en `.design-logs/ADL-006-webmock-http-stubbing.md` (WebMock para stubbing HTTP; numeración corrida respecto al plan original por ADL-004 adicional)
+- [x] T035 Smoke test final: 155 ejemplos verde · `rubocop` 0 offenses · cobertura 100% · Brakeman 0 findings · badge commiteado al repo desde CI
+- [x] T036 Actualizar README con sección "Canales", Worker rake task, trazabilidad SendGrid (`custom_args`), badge de cobertura
 
 **Block Checkpoint Polish**: lint · rspec verde · cobertura global ≥90% · Brakeman clean · commit `chore(002-email/polish): rake worker, ADLs, docs` · push
 
