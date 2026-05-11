@@ -2,13 +2,14 @@
 
 class EventBuilder
   def self.build(notification_class:, recipient:, context: {}, priority: :standard)
-    new(notification_class:, recipient:, context:).call
+    new(notification_class:, recipient:, context:, priority:).call
   end
 
-  def initialize(notification_class:, recipient:, context:)
+  def initialize(notification_class:, recipient:, context:, priority: :standard)
     @notification_class = notification_class
     @recipient_input    = recipient
     @context            = context || {}
+    @priority           = priority
   end
 
   def call
@@ -61,32 +62,33 @@ class EventBuilder
   end
 
   def persist(attrs)
-    sql = <<~SQL.squish
+    insert_sql = <<~SQL.squish
       INSERT INTO notification_events
         (notification_type, recipient_canonical, recipient_type, context_id,
          payload, idempotency_hash, idempotency_window_ts)
       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)
       ON CONFLICT (idempotency_hash, idempotency_window_ts) DO NOTHING
-      RETURNING correlation_id;
+      RETURNING correlation_id, id;
     SQL
 
-    send_result = NotificationEvent.connection_pool.with_connection do |conn|
-      result = conn.exec_query(
-        sql,
-        "EventBuilder.persist",
-        [
-          attrs[:notification_type],
-          attrs[:recipient_canonical],
-          attrs[:recipient_type],
-          attrs[:context_id],
-          JSON.generate(attrs[:payload]),
-          attrs[:idempotency_hash],
-          attrs[:idempotency_window_ts]
-        ]
-      )
+    params = [
+      attrs[:notification_type],
+      attrs[:recipient_canonical],
+      attrs[:recipient_type],
+      attrs[:context_id],
+      JSON.generate(attrs[:payload]),
+      attrs[:idempotency_hash],
+      attrs[:idempotency_window_ts]
+    ]
+
+    send_result = ActiveRecord::Base.transaction do
+      conn   = ActiveRecord::Base.connection
+      result = conn.exec_query(insert_sql, "EventBuilder.persist", params)
 
       if result.rows.any?
-        SendResult.created(correlation_id: result.rows.first.first)
+        correlation_id, event_id = result.rows.first
+        Enqueuer.enqueue(event_id: event_id.to_i, correlation_id: correlation_id, priority: @priority)
+        SendResult.created(correlation_id: correlation_id)
       else
         existing_id = conn.exec_query(
           "SELECT correlation_id FROM notification_events WHERE idempotency_hash = $1 ORDER BY created_at DESC LIMIT 1",

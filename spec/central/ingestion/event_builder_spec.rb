@@ -63,5 +63,19 @@ RSpec.describe EventBuilder, type: :model do
         expect(NotificationEvent.count).to eq(0)
       end
     end
+
+    context "enqueue tras persistencia" do
+      it "crea un job en dispatch_queue cuando el evento es nuevo" do
+        BirthdayNotification.send("juan@example.com")
+        expect(DispatchQueue.count).to eq(1)
+        expect(DispatchQueue.last.status).to eq("pending")
+      end
+
+      it "no crea job adicional cuando el evento es duplicado" do
+        BirthdayNotification.send("juan@example.com")
+        BirthdayNotification.send("juan@example.com")
+        expect(DispatchQueue.count).to eq(1)
+      end
+    end
   end
 end

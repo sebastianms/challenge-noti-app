@@ -10,6 +10,7 @@ development:
 
 test:
   <<: *default
+  max_connections: 60
   url: <%= ENV.fetch("DATABASE_URL_TEST") { "postgres://postgres:postgres@localhost:5432/challenge_noti_app_test" } %>
 
 production:

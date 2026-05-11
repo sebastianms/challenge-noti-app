@@ -42,37 +42,37 @@ Convención:
 
 **Goal**: `WelcomeNotification.send("a@b.com")` → job en `dispatch_queue` → Worker → Sendgrid 202 → `done`.
 
-- [ ] T013 [US1] Crear `app/central/channels/channel_strategy.rb`: clase abstracta con `deliver` y `channel_name` que levantan `NotImplementedError`
-- [ ] T014 [P] [US1] Crear `app/central/channels/channel_registry.rb`: `register(name, channel)`, `for(name)` (levanta `KeyError` si no existe), `registered_names`
-- [ ] T015 [P] [US1] Test `spec/central/channels/channel_registry_spec.rb`: register, for, KeyError en canal desconocido, registered_names — 5 ejemplos
-- [ ] T016 [US1] Crear `app/central/channels/sendgrid_adapter.rb`: `deliver(event, recipient_email, correlation_id:)`, construye payload v3, envía con `Net::HTTP`, propaga `X-Correlation-ID`, clasifica respuesta HTTP en `:delivered` / error permanente / error transitorio
-- [ ] T017 [P] [US1] Test `spec/central/channels/sendgrid_adapter_spec.rb` con WebMock:
+- [x] T013 [US1] Crear `app/central/channels/channel_strategy.rb`: clase abstracta con `deliver` y `channel_name` que levantan `NotImplementedError`
+- [x] T014 [P] [US1] Crear `app/central/channels/channel_registry.rb`: `register(name, channel)`, `for(name)` (levanta `KeyError` si no existe), `registered_names`
+- [x] T015 [P] [US1] Test `spec/central/channels/channel_registry_spec.rb`: register, for, KeyError en canal desconocido, registered_names — 5 ejemplos
+- [x] T016 [US1] Crear `app/central/channels/sendgrid_adapter.rb`: `deliver(event, recipient_email, correlation_id:)`, construye payload v3, envía con `Net::HTTP`, propaga `X-Correlation-ID`, clasifica respuesta HTTP en `:delivered` / error permanente / error transitorio
+- [x] T017 [P] [US1] Test `spec/central/channels/sendgrid_adapter_spec.rb` con WebMock:
   - stub 202 → `:delivered`
   - stub 503 → levanta `TransientError`
   - stub 400 → levanta `PermanentError`
   - header `X-Correlation-ID` presente en la request
   - payload incluye `subject`, `content`, `to`, `from`
   — 8 ejemplos
-- [ ] T018 [US1] Crear `app/central/channels/email_channel.rb`: implementa `ChannelStrategy`, valida que `recipient_id` contenga `@` (levanta `ArgumentError` si no), delega a `SendgridAdapter`, registra en `ChannelRegistry` como `:email`
-- [ ] T019 [P] [US1] Test `spec/central/channels/email_channel_spec.rb`:
+- [x] T018 [US1] Crear `app/central/channels/email_channel.rb`: implementa `ChannelStrategy`, valida que `recipient_id` contenga `@` (levanta `ArgumentError` si no), delega a `SendgridAdapter`, registra en `ChannelRegistry` como `:email`
+- [x] T019 [P] [US1] Test `spec/central/channels/email_channel_spec.rb`:
   - deliver con email válido → `:delivered` (WebMock stub 202)
   - deliver con user_id sin @ → `ArgumentError`
   - `channel_name` → `"email"`
   — 5 ejemplos
-- [ ] T020 [US1] Crear `app/central/broker/enqueuer.rb`: `Enqueuer.enqueue(event, priority: :standard)` → INSERT en `dispatch_queue` + INSERT en `notification_audit` con status `enqueued`
-- [ ] T021 [P] [US1] Test `spec/central/broker/enqueuer_spec.rb`:
+- [x] T020 [US1] Crear `app/central/broker/enqueuer.rb`: `Enqueuer.enqueue(event, priority: :standard)` → INSERT en `dispatch_queue` + INSERT en `notification_audit` con status `enqueued`
+- [x] T021 [P] [US1] Test `spec/central/broker/enqueuer_spec.rb`:
   - crea job `pending` en `dispatch_queue`
   - registra audit `enqueued`
   - prioridad configurable
   — 5 ejemplos
-- [ ] T022 [US1] Modificar `app/central/ingestion/event_builder.rb`: en `persist`, tras INSERT exitoso (no duplicado), llamar a `Central::Broker::Enqueuer.enqueue(event)` dentro de la misma transacción
-- [ ] T023 [P] [US1] Test `spec/central/ingestion/event_builder_spec.rb` (ampliar): duplicate no crea job · created sí crea job — 2 ejemplos adicionales (manteniendo los 7 existentes)
-- [ ] T024 [US1] Crear `app/central/broker/worker.rb`: `process_batch(batch_size: 10)` — SELECT SKIP LOCKED, marca `in_flight`, llama al canal, registra audit `dispatched` + `delivered`/`failed`, backoff o DLQ. Método `start(batch_size:, sleep_interval:)` para loop continuo
-- [ ] T025 [P] [US1] Test `spec/central/broker/worker_spec.rb`:
+- [x] T022 [US1] Modificar `app/central/ingestion/event_builder.rb`: en `persist`, tras INSERT exitoso (no duplicado), llamar a `Enqueuer.enqueue(event_id:, correlation_id:)` dentro de la misma transacción
+- [x] T023 [P] [US1] Test `spec/central/ingestion/event_builder_spec.rb` (ampliar): duplicate no crea job · created sí crea job — 2 ejemplos adicionales (manteniendo los 7 existentes)
+- [x] T024 [US1] Crear `app/central/broker/worker.rb`: `process_batch(batch_size: 10)` — SELECT SKIP LOCKED, marca `in_flight`, llama al canal, registra audit `dispatched` + `delivered`/`failed`, backoff o DLQ. Método `start(batch_size:, sleep_interval:)` para loop continuo
+- [x] T025 [P] [US1] Test `spec/central/broker/worker_spec.rb`:
   - procesa job pending → done (WebMock stub 202)
   - SKIP LOCKED: dos workers simultáneos no toman el mismo job
   - job done no se vuelve a procesar
-  — 5 ejemplos
+  — 8 ejemplos (incluye orphan event, backoff 503, PermanentError)
 
 **Block Checkpoint US1**: lint · rspec verde · cobertura ≥90% en `app/central/broker/` y `app/central/channels/` · Deckard · commit `feat(002-email/us1): broker + email channel + sendgrid adapter`
 
