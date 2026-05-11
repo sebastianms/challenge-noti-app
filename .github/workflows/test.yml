@@ -52,14 +52,14 @@ jobs:
           elif [ "$PCT" -ge 80 ]; then COLOR="yellow"
           else                         COLOR="red"
           fi
-          curl -s "https://img.shields.io/badge/Coverage-${PCT}%25-${COLOR}?style=flat" \
-               -o badges/coverage.svg
+          echo "{\"schemaVersion\":1,\"label\":\"Coverage\",\"message\":\"${PCT}%\",\"color\":\"${COLOR}\"}" \
+            > badges/coverage.json
       - name: Commit coverage badge
         if: github.ref == 'refs/heads/main'
         run: |
           git config user.name  "GitHub Actions"
           git config user.email "github-actions@github.com"
-          git add badges/coverage.svg
+          git add badges/coverage.json
           if ! git diff --staged --quiet; then
             git commit -m "chore(ci): update coverage badge [skip ci]"
             git push
