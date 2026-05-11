@@ -27,6 +27,99 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: dispatch_queue; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dispatch_queue (
+    id bigint NOT NULL,
+    event_id bigint NOT NULL,
+    priority text DEFAULT 'standard'::text NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    next_attempt_at timestamp with time zone DEFAULT now() NOT NULL,
+    locked_at timestamp with time zone,
+    failed_reason text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT dispatch_queue_priority_check CHECK ((priority = ANY (ARRAY['critical'::text, 'standard'::text, 'bulk'::text]))),
+    CONSTRAINT dispatch_queue_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'in_flight'::text, 'done'::text, 'failed'::text])))
+);
+
+
+--
+-- Name: dispatch_queue_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dispatch_queue_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dispatch_queue_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dispatch_queue_id_seq OWNED BY public.dispatch_queue.id;
+
+
+--
+-- Name: notification_audit; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_audit (
+    id bigint NOT NULL,
+    correlation_id uuid NOT NULL,
+    event_id bigint,
+    status text NOT NULL,
+    channel text,
+    rule_snapshot jsonb,
+    payload jsonb,
+    metadata jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+)
+PARTITION BY RANGE (created_at);
+
+
+--
+-- Name: notification_audit_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notification_audit_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_audit_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notification_audit_id_seq OWNED BY public.notification_audit.id;
+
+
+--
+-- Name: notification_audit_2026_05; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_audit_2026_05 (
+    id bigint DEFAULT nextval('public.notification_audit_id_seq'::regclass) NOT NULL,
+    correlation_id uuid NOT NULL,
+    event_id bigint,
+    status text NOT NULL,
+    channel text,
+    rule_snapshot jsonb,
+    payload jsonb,
+    metadata jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: notification_events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -98,10 +191,31 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: notification_audit_2026_05; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_audit ATTACH PARTITION public.notification_audit_2026_05 FOR VALUES FROM ('2026-05-01 00:00:00+00') TO ('2026-06-01 00:00:00+00');
+
+
+--
 -- Name: notification_events_default; Type: TABLE ATTACH; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.notification_events ATTACH PARTITION public.notification_events_default DEFAULT;
+
+
+--
+-- Name: dispatch_queue id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_queue ALTER COLUMN id SET DEFAULT nextval('public.dispatch_queue_id_seq'::regclass);
+
+
+--
+-- Name: notification_audit id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_audit ALTER COLUMN id SET DEFAULT nextval('public.notification_audit_id_seq'::regclass);
 
 
 --
@@ -117,6 +231,30 @@ ALTER TABLE ONLY public.notification_events ALTER COLUMN id SET DEFAULT nextval(
 
 ALTER TABLE ONLY public.ar_internal_metadata
     ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: dispatch_queue dispatch_queue_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dispatch_queue
+    ADD CONSTRAINT dispatch_queue_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notification_audit notification_audit_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_audit
+    ADD CONSTRAINT notification_audit_pkey PRIMARY KEY (id, created_at);
+
+
+--
+-- Name: notification_audit_2026_05 notification_audit_2026_05_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_audit_2026_05
+    ADD CONSTRAINT notification_audit_2026_05_pkey PRIMARY KEY (id, created_at);
 
 
 --
@@ -176,6 +314,13 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: idx_dispatch_queue_workable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dispatch_queue_workable ON public.dispatch_queue USING btree (next_attempt_at, priority) WHERE (status = 'pending'::text);
+
+
+--
 -- Name: idx_notification_events_correlation_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -204,6 +349,48 @@ CREATE INDEX idx_notification_events_status_created_at ON ONLY public.notificati
 
 
 --
+-- Name: notification_audit_correlation_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_correlation_id_idx ON ONLY public.notification_audit USING btree (correlation_id);
+
+
+--
+-- Name: notification_audit_2026_05_correlation_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_2026_05_correlation_id_idx ON public.notification_audit_2026_05 USING btree (correlation_id);
+
+
+--
+-- Name: notification_audit_metadata_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_metadata_idx ON ONLY public.notification_audit USING gin (metadata);
+
+
+--
+-- Name: notification_audit_2026_05_metadata_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_2026_05_metadata_idx ON public.notification_audit_2026_05 USING gin (metadata);
+
+
+--
+-- Name: notification_audit_payload_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_payload_idx ON ONLY public.notification_audit USING gin (payload);
+
+
+--
+-- Name: notification_audit_2026_05_payload_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX notification_audit_2026_05_payload_idx ON public.notification_audit_2026_05 USING gin (payload);
+
+
+--
 -- Name: notification_events_default_correlation_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -229,6 +416,34 @@ CREATE INDEX notification_events_default_recipient_canonical_idx ON public.notif
 --
 
 CREATE INDEX notification_events_default_status_created_at_idx ON public.notification_events_default USING btree (status, created_at);
+
+
+--
+-- Name: notification_audit_2026_05_correlation_id_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.notification_audit_correlation_id_idx ATTACH PARTITION public.notification_audit_2026_05_correlation_id_idx;
+
+
+--
+-- Name: notification_audit_2026_05_metadata_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.notification_audit_metadata_idx ATTACH PARTITION public.notification_audit_2026_05_metadata_idx;
+
+
+--
+-- Name: notification_audit_2026_05_payload_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.notification_audit_payload_idx ATTACH PARTITION public.notification_audit_2026_05_payload_idx;
+
+
+--
+-- Name: notification_audit_2026_05_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.notification_audit_pkey ATTACH PARTITION public.notification_audit_2026_05_pkey;
 
 
 --
@@ -287,5 +502,7 @@ ALTER INDEX public.idx_notification_events_status_created_at ATTACH PARTITION pu
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260510000003'),
+('20260510000002'),
 ('20260510000001');
 
