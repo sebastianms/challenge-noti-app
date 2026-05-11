@@ -93,7 +93,8 @@ class EventBuilder
           correlation_id:      correlation_id,
           event_id:            event_id.to_i,
           notification_type:   attrs[:notification_type],
-          recipient_canonical: attrs[:recipient_canonical]
+          recipient_canonical: attrs[:recipient_canonical],
+          payload:             attrs[:payload]
         )
         SendResult.created(correlation_id: correlation_id)
       else
@@ -110,7 +111,7 @@ class EventBuilder
     send_result
   end
 
-  def apply_decision(correlation_id:, event_id:, notification_type:, recipient_canonical:)
+  def apply_decision(correlation_id:, event_id:, notification_type:, recipient_canonical:, payload:)
     event = OpenStruct.new(
       correlation_id:      correlation_id,
       notification_type:   notification_type,
@@ -127,6 +128,15 @@ class EventBuilder
         recipient_canonical: recipient_canonical,
         priority:            decision.priority || @priority
       )
+    when :digest
+      enqueue_digest(
+        correlation_id:      correlation_id,
+        event_id:            event_id,
+        notification_type:   notification_type,
+        recipient_canonical: recipient_canonical,
+        payload:             payload,
+        decision:            decision
+      )
     when :filter
       NotificationAudit.create!(
         correlation_id:      correlation_id,
@@ -139,6 +149,30 @@ class EventBuilder
         metadata:            { reason: decision.reason, rule_id: decision.rule_id }
       )
     end
+  end
+
+  def enqueue_digest(correlation_id:, event_id:, notification_type:, recipient_canonical:, payload:, decision:)
+    dispatch_at = Time.current + decision.digest_window_seconds.seconds
+    PendingDigest.create!(
+      correlation_id:      correlation_id,
+      event_id:            event_id,
+      notification_type:   notification_type,
+      recipient_canonical: recipient_canonical,
+      payload:             payload,
+      rule_snapshot:       { rule_id: decision.rule_id, digest_window_seconds: decision.digest_window_seconds },
+      dispatch_at:         dispatch_at,
+      status:              "pending"
+    )
+    NotificationAudit.create!(
+      correlation_id:      correlation_id,
+      event_id:            event_id,
+      status:              "pending_digest",
+      channel:             "email",
+      source:              "internal",
+      notification_type:   notification_type,
+      recipient_canonical: recipient_canonical,
+      metadata:            { rule_id: decision.rule_id, dispatch_at: dispatch_at.iso8601 }
+    )
   end
 
   def log_result(result, attrs)

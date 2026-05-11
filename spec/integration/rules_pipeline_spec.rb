@@ -44,4 +44,22 @@ RSpec.describe "Rules engine pipeline" do
       expect(NotificationAudit.last.metadata).to be_nil
     end
   end
+
+  describe "digest end-to-end (US2 Scenario 4)" do
+    it "accumulates pending_digests and consolidates after the window expires" do
+      NotificationRule.create!(notification_type: "birthday", digest_window_seconds: 60, channels: [ "email" ])
+
+      5.times { |i| BirthdayNotification.send("alice@example.com", context: { id: "d#{i}", name: "Alice" }) }
+
+      expect(PendingDigest.where(status: "pending").count).to eq(5)
+      expect(DispatchQueue.count).to eq(0)
+
+      PendingDigest.update_all(dispatch_at: 1.second.ago)
+      DigestScheduler.process_batch
+
+      expect(DispatchQueue.count).to eq(1)
+      expect(PendingDigest.where(status: "consolidated").count).to eq(5)
+      expect(NotificationAudit.where(status: "digested").count).to eq(5)
+    end
+  end
 end
