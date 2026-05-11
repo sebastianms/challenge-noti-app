@@ -34,12 +34,18 @@ module ChallengeNotiApp
       #{config.root}/app/central
       #{config.root}/app/central/models
       #{config.root}/app/central/ingestion
+      #{config.root}/app/central/broker
+      #{config.root}/app/central/channels
+      #{config.root}/app/central/audit
     ]
     config.eager_load_paths += %W[
       #{config.root}/app/notifications
       #{config.root}/app/central
       #{config.root}/app/central/models
       #{config.root}/app/central/ingestion
+      #{config.root}/app/central/broker
+      #{config.root}/app/central/channels
+      #{config.root}/app/central/audit
     ]
 
     config.time_zone = "UTC"
