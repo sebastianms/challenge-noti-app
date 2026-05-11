@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Blacklist pipeline", type: :integration do
+RSpec.describe "Blacklist pipeline", type: :request do
   describe "US1a — scope=global filtra cualquier tipo y casing distinto" do
     before do
       NotificationBlacklist.create!(
@@ -78,6 +78,46 @@ RSpec.describe "Blacklist pipeline", type: :integration do
       )
 
       result = BirthdayNotification.send("  EDGE@Example.com  ")
+      expect(result).to be_filtered
+    end
+  end
+
+  describe "US2 — POST webhook hard bounce → blacklist → siguiente envío filtered" do
+    let(:keypair)   { SendgridWebhookSigner.generate_keypair }
+    let(:timestamp) { Time.current.to_i.to_s }
+    let(:hard_bounce) do
+      {
+        "event"       => "bounce",
+        "type"        => "bounce",
+        "email"       => "willfail@example.com",
+        "reason"      => "550 5.1.1 mailbox does not exist",
+        "timestamp"   => Time.current.to_i,
+        "sg_event_id" => "evt_hard_001"
+      }
+    end
+    let(:body)      { [ hard_bounce ].to_json }
+    let(:signature) { SendgridWebhookSigner.sign(payload: body, timestamp: timestamp, signing_key: keypair[:signing_key]) }
+
+    before  { ENV["SENDGRID_WEBHOOK_PUBLIC_KEY"] = keypair[:public_key_b64] }
+    after   { ENV.delete("SENDGRID_WEBHOOK_PUBLIC_KEY") }
+
+    it "POST firmado + process_batch → blacklist creada + siguiente .send filtered" do
+      post "/webhooks/sendgrid",
+           params:  body,
+           headers: {
+             "Content-Type"                           => "application/json",
+             "X-Twilio-Email-Event-Webhook-Signature" => signature,
+             "X-Twilio-Email-Event-Webhook-Timestamp" => timestamp
+           }
+      expect(response).to have_http_status(:ok)
+
+      WebhookEventWorker.process_batch
+
+      entry = NotificationBlacklist.find_by(recipient_canonical: "willfail@example.com")
+      expect(entry).not_to be_nil
+      expect(entry.source).to eq("hard_bounce")
+
+      result = BirthdayNotification.send("willfail@example.com")
       expect(result).to be_filtered
     end
   end
