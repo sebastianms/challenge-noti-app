@@ -7,14 +7,14 @@ class SendgridAdapter
   SENDGRID_API_URL = URI("https://api.sendgrid.com/v3/mail/send")
 
   def deliver(event, recipient_email, correlation_id:)
-    payload = build_payload(event, recipient_email)
+    payload  = build_payload(event, recipient_email, correlation_id)
     response = post_to_sendgrid(payload, correlation_id)
     classify(response)
   end
 
   private
 
-  def build_payload(event, recipient_email)
+  def build_payload(event, recipient_email, correlation_id)
     event_payload = event.payload.is_a?(Hash) ? event.payload : JSON.parse(event.payload.to_s)
     subject = event_payload["subject"] || event.notification_type.to_s
     body    = event_payload["body"]    || subject
@@ -22,7 +22,10 @@ class SendgridAdapter
       personalizations: [ { to: [ { email: recipient_email } ] } ],
       from:             { email: from_email },
       subject:          subject,
-      content:          [ { type: "text/plain", value: body } ]
+      content:          [ { type: "text/plain", value: body } ],
+      # custom_args are persisted by SendGrid and included in webhook event payloads,
+      # enabling correlation between SendGrid delivery events and our notification_audit records.
+      custom_args:      { "correlation_id" => correlation_id.to_s }
     }
   end
 

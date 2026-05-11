@@ -77,5 +77,12 @@ RSpec.describe SendgridAdapter do
       expect(WebMock).to have_requested(:post, "https://api.sendgrid.com/v3/mail/send")
         .with(body: hash_including("from" => hash_including("email")))
     end
+
+    it "includes correlation_id in custom_args for SendGrid webhook correlation" do
+      adapter.deliver(event, recipient_email, correlation_id: correlation_id)
+
+      expect(WebMock).to have_requested(:post, "https://api.sendgrid.com/v3/mail/send")
+        .with(body: hash_including("custom_args" => { "correlation_id" => correlation_id }))
+    end
   end
 end

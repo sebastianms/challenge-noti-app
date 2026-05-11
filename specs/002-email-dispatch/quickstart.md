@@ -111,7 +111,11 @@ end
 
 ---
 
-## Escenario 6 — X-Correlation-ID propagado a Sendgrid
+## Escenario 6 — Correlation ID propagado a Sendgrid
+
+El `correlation_id` viaja en dos lugares del request:
+- **Header HTTP** `X-Correlation-ID` — para correlacionar logs de requests salientes.
+- **`custom_args`** en el payload JSON — SendGrid los persiste y los incluye en webhooks de eventos (bounce, delivered, open), permitiendo cruzar eventos de SendGrid con `notification_audit`.
 
 ```ruby
 stub_request(:post, "https://api.sendgrid.com/v3/mail/send").to_return(status: 202)
@@ -119,8 +123,20 @@ stub_request(:post, "https://api.sendgrid.com/v3/mail/send").to_return(status: 2
 result = BirthdayNotification.send("frank@example.com", context: { name: "Frank" })
 Worker.process_batch
 
+# Header HTTP (logs de requests salientes)
 expect(WebMock).to have_requested(:post, "https://api.sendgrid.com/v3/mail/send")
   .with(headers: { "X-Correlation-ID" => result.correlation_id })
+
+# custom_args (persiste en SendGrid → aparece en webhooks de eventos)
+expect(WebMock).to have_requested(:post, "https://api.sendgrid.com/v3/mail/send")
+  .with(body: hash_including("custom_args" => { "correlation_id" => result.correlation_id }))
+```
+
+Cuando SendGrid envía un webhook de bounce o delivered, el payload incluye `correlation_id`, lo que permite buscar directamente en `notification_audit`:
+
+```ruby
+# En el webhook handler de SendGrid:
+NotificationAudit.find_by(correlation_id: params[:correlation_id])
 ```
 
 ---

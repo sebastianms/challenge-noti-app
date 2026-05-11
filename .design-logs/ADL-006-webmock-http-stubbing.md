@@ -39,4 +39,4 @@ El helper `SendgridStubs` en `spec/support/sendgrid_stubs.rb` encapsula los stub
 - Toda llamada HTTP no stubbeada falla inmediatamente en tests — detecta omisiones de stub.
 - Los stubs son declarativos y legibles junto al test.
 - `WebMock.disable_net_connect!` se aplica globalmente; si se agrega un nuevo adaptador de canal, sus specs necesitan el stub correspondiente.
-- Cobertura de `X-Correlation-ID`: `have_requested(...).with(headers: {...})` verifica que el header llega al proveedor.
+- Cobertura de trazabilidad: `have_requested(...).with(headers: {...})` verifica el header `X-Correlation-ID`; `have_requested(...).with(body: hash_including("custom_args" => ...))` verifica que `correlation_id` llega en el payload para correlación con webhooks de SendGrid.

@@ -130,6 +130,18 @@ docker compose exec app bin/rails worker:run
 
 El Worker usa `FOR UPDATE SKIP LOCKED` para soportar múltiples instancias simultáneas sin duplicados. Implementa backoff exponencial (1m → 5m → 25m) y DLQ automático tras 3 intentos fallidos.
 
+### Trazabilidad con SendGrid
+
+Cada request a SendGrid incluye el `correlation_id` del evento en dos lugares:
+
+- **Header HTTP `X-Correlation-ID`**: correlaciona logs de requests salientes.
+- **`custom_args.correlation_id`** en el payload JSON: SendGrid lo persiste y lo incluye en webhooks de eventos (bounce, delivered, open), permitiendo cruzar eventos de entrega con registros de `notification_audit`:
+
+```ruby
+# En el handler de webhooks de SendGrid:
+NotificationAudit.find_by(correlation_id: params[:correlation_id])
+```
+
 ### Agregar un canal nuevo
 
 ```ruby

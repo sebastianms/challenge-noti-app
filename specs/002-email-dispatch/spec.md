@@ -44,16 +44,20 @@ Cuando Sendgrid responde con un error transitorio (5xx, timeout), el Worker rein
 
 ### User Story 3 — Correlation ID propagado al proveedor (P2)
 
-El `correlation_id` generado en la ingesta viaja como header HTTP `X-Correlation-ID` en cada llamada a Sendgrid. Cuando Sendgrid registra el evento, ese ID aparece en sus logs, permitiendo cruzar incidentes.
+El `correlation_id` generado en la ingesta viaja al proveedor de dos formas complementarias:
 
-**Por qué P2**: trazabilidad cross-sistema es necesaria para soporte, pero no bloquea la entrega básica.
+- **Header HTTP `X-Correlation-ID`**: permite correlacionar logs de requests salientes con registros internos en tiempo de ejecución.
+- **`custom_args.correlation_id` en el payload JSON**: SendGrid persiste estos argumentos y los incluye en los payloads de sus webhooks de eventos (bounce, delivered, open). Esto permite cruzar eventos de entrega de SendGrid con registros de `notification_audit` sin depender de logs efímeros.
 
-**Test independiente**: el `SendgridAdapter` recibe el `correlation_id` del evento y lo incluye en los headers de la petición HTTP; verificable sin llamar a la API real (stub de HTTP con VCR o WebMock).
+**Por qué P2**: trazabilidad cross-sistema es necesaria para soporte e investigación de incidentes, pero no bloquea la entrega básica.
+
+**Test independiente**: el `SendgridAdapter` recibe el `correlation_id` del evento y lo incluye tanto en el header HTTP como en `custom_args`; verificable con WebMock sin llamar a la API real.
 
 **Acceptance Scenarios**:
 
-1. **Given** un evento con `correlation_id = "uuid-123"`, **When** el adapter construye la petición a Sendgrid, **Then** incluye el header `X-Correlation-ID: uuid-123`.
-2. **Given** un job reintentado (segundo intento), **Then** el header `X-Correlation-ID` es el mismo del evento original, no uno nuevo.
+1. **Given** un evento con `correlation_id = "uuid-123"`, **When** el adapter construye la petición a Sendgrid, **Then** incluye el header `X-Correlation-ID: uuid-123` y `custom_args: { "correlation_id": "uuid-123" }` en el payload JSON.
+2. **Given** un job reintentado (segundo intento), **Then** tanto el header como `custom_args.correlation_id` son los mismos del evento original, no valores nuevos.
+3. **Given** SendGrid envía un webhook de bounce con `correlation_id` en el payload, **Then** el sistema puede buscar `NotificationAudit.find_by(correlation_id: ...)` y registrar el fallo.
 
 ---
 
