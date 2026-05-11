@@ -17,7 +17,7 @@ gem "turbo-rails"
 gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
-gem "devise", "~> 4.9"
+gem "devise", "~> 5.0"
 gem "chartkick", "~> 5.1"
 gem "groupdate", "~> 6.4"
 
