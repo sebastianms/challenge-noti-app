@@ -13,7 +13,7 @@ Cola de despacho (Capa C del pipeline). Un job por evento creado.
 ```sql
 CREATE TABLE dispatch_queue (
   id              BIGSERIAL PRIMARY KEY,
-  event_id        BIGINT      NOT NULL,  -- sin FK declarativa; ver ADL-005
+  event_id        BIGINT      NOT NULL,  -- sin FK declarativa; ver ADL-003
   priority        TEXT        NOT NULL DEFAULT 'standard'
                               CHECK (priority IN ('critical', 'standard', 'bulk')),
   status          TEXT        NOT NULL DEFAULT 'pending'
@@ -36,7 +36,7 @@ CREATE INDEX idx_dispatch_queue_workable
 - `event_id` no tiene FK declarativa — `notification_events` es particionada con PK compuesta
   `(id, idempotency_window_ts)` y Postgres no acepta FK a columnas que no sean PK/UNIQUE completa.
   La integridad se garantiza por `EventBuilder#persist` que hace el enqueue en la misma transacción.
-  Ver **ADL-005**.
+  Ver **ADL-003**.
 - `attempts` empieza en 0 y se incrementa antes de cada intento.
 - `locked_at` se setea cuando el Worker toma el job (`in_flight`); se limpia al completar o fallar.
 - `failed_reason` documenta el motivo de DLQ: `"sendgrid_5xx"`, `"no_email_address"`, `"invalid_payload"`, etc.
@@ -87,7 +87,7 @@ CREATE INDEX ON notification_audit USING GIN (metadata);
 
 ### `notification_events` (existente)
 
-No se cambia el DDL. Se agrega la asociación AR `has_one :dispatch_job, class_name: 'DispatchQueue'` para conveniencia en tests.
+No se cambia el DDL. No se agrega asociación AR — no hay FK declarativa entre ambas tablas (ver ADL-003).
 
 ---
 
@@ -96,7 +96,7 @@ No se cambia el DDL. Se agrega la asociación AR `has_one :dispatch_job, class_n
 ```ruby
 # app/central/broker/dispatch_queue.rb
 class DispatchQueue < ApplicationRecord
-  # Sin belongs_to :notification_event — no hay FK declarativa (ver ADL-005)
+  # Sin belongs_to :notification_event — no hay FK declarativa (ver ADL-003)
 
   BACKOFF_SCHEDULE = [ 1.minute, 5.minutes, 25.minutes ].freeze
   MAX_ATTEMPTS     = BACKOFF_SCHEDULE.size
@@ -130,7 +130,7 @@ end
 ```ruby
 FactoryBot.define do
   factory :dispatch_queue do
-    event_id        { 1 }   # referencia simple, sin asociación AR (ver ADL-005)
+    event_id        { 1 }   # referencia simple, sin asociación AR (ver ADL-003)
     priority        { 'standard' }
     status          { 'pending' }
     attempts        { 0 }

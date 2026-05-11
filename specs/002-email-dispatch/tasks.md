@@ -117,8 +117,8 @@ Convención:
 
 - [ ] T031 [P] Crear `lib/tasks/worker.rake` con `worker:run[batch_size,sleep_interval]` para ejecutar el Worker en foreground desde CLI
 - [ ] T032 [P] Crear `spec/support/sendgrid_stubs.rb` con helpers `stub_sendgrid_success` y `stub_sendgrid_error(status:)` reutilizables
-- [ ] T033 [P] Crear ADL-003 en `.design-logs/ADL-003-broker-dispatch-queue-skip-locked.md`
-- [ ] T034 [P] Crear ADL-004 en `.design-logs/ADL-004-webmock-http-stubbing.md`
+- [ ] T033 [P] Crear ADL-004 en `.design-logs/ADL-004-broker-dispatch-queue-skip-locked.md`
+- [ ] T034 [P] Crear ADL-005 en `.design-logs/ADL-005-webmock-http-stubbing.md`
 - [ ] T035 Smoke test final: todos los ejemplos de `quickstart.md` cubiertos por specs · `bundle exec rubocop` 0 offenses · cobertura ≥90% en módulos nuevos · Brakeman 0 findings
 - [ ] T036 Actualizar README con sección "Canales" y mención del Worker rake task
 

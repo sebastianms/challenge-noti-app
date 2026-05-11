@@ -1,4 +1,4 @@
-# ADL-005 — FK declarativa omitida entre `dispatch_queue` y `notification_events`
+# ADL-003 — FK declarativa omitida entre `dispatch_queue` y `notification_events`
 
 **Status**: Accepted
 **Date**: 2026-05-10
