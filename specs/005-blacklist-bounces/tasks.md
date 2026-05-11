@@ -12,11 +12,11 @@ Convenciones:
 
 ## Setup
 
-- [ ] T001 Crear migration `db/migrate/20260513000001_create_notification_blacklist.rb` con tabla, CHECKs (`blacklist_scope_target_chk`, `blacklist_scope_values_chk`, `blacklist_source_values_chk`), UNIQUE `(recipient_canonical, scope, target) NULLS NOT DISTINCT`, índices `idx_blacklist_lookup` y `idx_blacklist_source_created`
-- [ ] T002 Correr `bin/rails db:migrate` y verificar `db/schema.rb` (o `structure.sql`) actualizado con la nueva tabla
-- [ ] T003 [P] Crear modelo `app/central/decisioning/notification_blacklist.rb` con validaciones AR: `validates :scope, inclusion: { in: %w[global type channel] }`, `validates :source, inclusion: { in: %w[manual admin_ui hard_bounce dropped spamreport] }`, validación custom de scope/target coherentes
-- [ ] T004 [P] Crear factory `spec/support/factories/notification_blacklists.rb` con trait `:global`, `:type_scoped`, `:channel_scoped`, `:hard_bounce`
-- [ ] T005 Spec de schema `spec/central/decisioning/notification_blacklist_schema_spec.rb`: verifica CHECK rechaza `scope=global + target='x'`, CHECK rechaza `scope=type + target=NULL`, UNIQUE rechaza duplicados, `NULLS NOT DISTINCT` rechaza dos `(recipient, global, NULL)` (7 ejemplos)
+- [x] T001 Crear migration `db/migrate/20260512170000_create_notification_blacklist.rb` con tabla, CHECKs (`blacklist_scope_target_chk`, `blacklist_scope_values_chk`, `blacklist_source_values_chk`), UNIQUE `(recipient_canonical, scope, target) NULLS NOT DISTINCT`, índices `idx_blacklist_lookup` y `idx_blacklist_source_created`
+- [x] T002 Correr `bin/rails db:migrate` y verificar `db/schema.rb` (o `structure.sql`) actualizado con la nueva tabla
+- [x] T003 [P] Crear modelo `app/central/decisioning/notification_blacklist.rb` con validaciones AR: `validates :scope, inclusion: { in: %w[global type channel] }`, `validates :source, inclusion: { in: %w[manual admin_ui hard_bounce dropped spamreport] }`, validación custom de scope/target coherentes
+- [x] T004 [P] Crear factory `spec/support/factories/notification_blacklists.rb` con trait `:global`, `:type_scoped`, `:channel_scoped`, `:hard_bounce`
+- [x] T005 Spec de schema `spec/central/decisioning/notification_blacklist_schema_spec.rb`: verifica CHECK rechaza `scope=global + target='x'`, CHECK rechaza `scope=type + target=NULL`, UNIQUE rechaza duplicados, `NULLS NOT DISTINCT` rechaza dos `(recipient, global, NULL)` (7 ejemplos)
 
 **Block Checkpoint Setup**: rubocop sin warnings · rspec verde · commit `feat(005-blacklist-bounces/setup): tabla + modelo + factory + schema spec`
 
