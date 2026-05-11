@@ -1,0 +1,15 @@
+<tr>
+  <td><%= entry.created_at.iso8601 %></td>
+  <td><%= entry.recipient_canonical %></td>
+  <td><%= entry.scope %></td>
+  <td><%= entry.target %></td>
+  <td><%= entry.source %></td>
+  <td><%= truncate(entry.reason.to_s, length: 80) %></td>
+  <td>
+    <%= button_to "Remover",
+                  admin_blacklist_path(entry.id),
+                  method: :delete,
+                  params: { reason: "removed via admin UI" },
+                  data: { confirm: "¿Confirmar remoción?" } %>
+  </td>
+</tr>

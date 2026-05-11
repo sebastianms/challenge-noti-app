@@ -1,0 +1,21 @@
+<%= form_with url: admin_blacklist_index_path, method: :post, local: true do |f| %>
+  <fieldset>
+    <p>
+      <%= f.label :recipient %>
+      <%= f.text_field :recipient, required: true %>
+    </p>
+    <p>
+      <%= f.label :scope %>
+      <%= f.select :scope, [ "global", "type", "channel" ] %>
+    </p>
+    <p>
+      <%= f.label :target %>
+      <%= f.text_field :target, placeholder: "vacío si scope=global" %>
+    </p>
+    <p>
+      <%= f.label :reason %>
+      <%= f.text_area :reason, rows: 2, cols: 60 %>
+    </p>
+    <p><%= f.submit "Agregar a blacklist" %></p>
+  </fieldset>
+<% end %>

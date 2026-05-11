@@ -1,0 +1,50 @@
+<h1>Blacklist de destinatarios</h1>
+
+<% if flash[:error].present? %>
+  <p style="color: red;"><%= flash[:error] %></p>
+<% end %>
+
+<%= form_with url: admin_blacklist_index_path, method: :get, local: true do |f| %>
+  <fieldset>
+    <legend>Filtros</legend>
+    <p>
+      <%= f.label :recipient %>
+      <%= f.text_field :recipient, value: @filters[:recipient] %>
+    </p>
+    <p>
+      <%= f.label :scope %>
+      <%= f.select :scope, [ "", "global", "type", "channel" ], { selected: @filters[:scope] } %>
+    </p>
+    <p>
+      <%= f.label :target %>
+      <%= f.text_field :target, value: @filters[:target] %>
+    </p>
+    <p>
+      <%= f.label :source %>
+      <%= f.select :source, [ "", "manual", "admin_ui", "hard_bounce", "dropped", "spamreport" ], { selected: @filters[:source] } %>
+    </p>
+    <p><%= f.submit "Buscar" %></p>
+  </fieldset>
+<% end %>
+
+<p>Total: <strong><%= @total %></strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>created_at</th>
+      <th>recipient_canonical</th>
+      <th>scope</th>
+      <th>target</th>
+      <th>source</th>
+      <th>reason</th>
+      <th>acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <%= render partial: "row", collection: @items, as: :entry %>
+  </tbody>
+</table>
+
+<h2>Alta manual</h2>
+<%= render partial: "form" %>
