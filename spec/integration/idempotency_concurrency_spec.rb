@@ -12,6 +12,11 @@ RSpec.describe "Idempotencia bajo concurrencia", :threads do
     per_thread    = 200
     results       = Concurrent::Array.new
 
+    # Congela el tiempo para que todos los threads calculen el mismo window_ts.
+    # Sin freeze_time, si el test cruza un límite de minuto (idempotency_window=1.minute),
+    # threads en minutos distintos generan hashes distintos y pasan el ON CONFLICT DO NOTHING.
+    freeze_time
+
     workers = threads_count.times.map do
       Thread.new do
         per_thread.times do
