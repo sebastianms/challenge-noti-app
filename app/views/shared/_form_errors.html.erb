@@ -1,0 +1,12 @@
+<% if object.errors.any? %>
+  <div class="mb-4 rounded-md bg-red-50 border border-red-200 px-4 py-3">
+    <p class="text-sm font-medium text-red-800 mb-1">
+      <%= pluralize(object.errors.count, "error") %> impidieron guardar:
+    </p>
+    <ul class="list-disc list-inside text-sm text-red-700 space-y-0.5">
+      <% object.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

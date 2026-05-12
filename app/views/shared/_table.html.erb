@@ -1,0 +1,16 @@
+<div class="overflow-x-auto">
+  <table class="admin-table min-w-full divide-y divide-gray-200 text-sm">
+    <thead class="bg-gray-50">
+      <tr>
+        <% headers.each do |col| %>
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+            <%= col %>
+          </th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-100">
+      <%= yield %>
+    </tbody>
+  </table>
+</div>
