@@ -1,0 +1,27 @@
+<div style="max-width:400px;margin:4rem auto;background:#fff;padding:2rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.12)">
+  <h2 style="margin-bottom:1.5rem;font-size:1.25rem">Acceso al panel</h2>
+
+  <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+    <div style="margin-bottom:1rem">
+      <%= f.label :email, "Correo electrónico", style: "display:block;margin-bottom:.25rem;font-size:.9rem" %>
+      <%= f.email_field :email, autofocus: true, autocomplete: "email",
+            style: "width:100%;padding:.5rem .75rem;border:1px solid #ccc;border-radius:4px;font-size:1rem" %>
+    </div>
+
+    <div style="margin-bottom:1rem">
+      <%= f.label :password, "Contraseña", style: "display:block;margin-bottom:.25rem;font-size:.9rem" %>
+      <%= f.password_field :password, autocomplete: "current-password",
+            style: "width:100%;padding:.5rem .75rem;border:1px solid #ccc;border-radius:4px;font-size:1rem" %>
+    </div>
+
+    <% if devise_mapping.rememberable? %>
+      <div style="margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <%= f.check_box :remember_me %>
+        <%= f.label :remember_me, "Recordarme", style: "font-size:.9rem" %>
+      </div>
+    <% end %>
+
+    <%= f.submit "Ingresar",
+          style: "width:100%;padding:.6rem;background:#1a1a2e;color:#fff;border:none;border-radius:4px;font-size:1rem;cursor:pointer" %>
+  <% end %>
+</div>

@@ -20,6 +20,7 @@ end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
   config.include ActiveSupport::Testing::TimeHelpers
+  config.include Devise::Test::IntegrationHelpers, type: :request
 
   config.use_transactional_fixtures = false
   config.filter_rails_from_backtrace!
@@ -29,6 +30,8 @@ RSpec.configure do |config|
     # Eager-load all app code so self-registering initializers (e.g. ChannelRegistry)
     # run regardless of which spec files are included in the run.
     Rails.application.eager_load!
+    # Ensure routes are drawn so Devise.mappings is populated before sign_in is called.
+    Rails.application.reload_routes!
     DatabaseCleaner.strategy = :transaction
     DatabaseCleaner.clean_with(:truncation)
   end
