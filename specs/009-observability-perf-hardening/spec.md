@@ -110,6 +110,22 @@ El panel admin (`/admin/*`) se construyó incrementalmente fase por fase prioriz
 
 ---
 
+### User Story 7 — Tour de la aplicación para revisores y stakeholders (Priority: P2)
+
+Un revisor del challenge o un stakeholder que abre el panel por primera vez no sabe qué hace cada sección, qué datos ve, ni en qué orden explorar. El runbook cubre incidentes; el README cubre setup técnico; ninguno de los dos guía la exploración del producto. Falta un documento narrativo que explique cada sección en términos de negocio, qué se puede hacer ahí, y qué datos de ejemplo buscar.
+
+**Why this priority**: directamente relevante para la evaluación del challenge. Un revisor que puede auto-orientarse en < 5 min impresiona más que uno que tiene que adivinar qué hace cada botón.
+
+**Independent Test**: dar `docs/app-tour.md` a alguien que nunca vio la app. Verificar que sin ayuda adicional puede: (a) entender qué es cada sección, (b) ejecutar al menos 1 acción en cada una (ver audits de una notificación, editar una regla, ver la DLQ, previsualizar un template).
+
+**Acceptance Scenarios**:
+1. **Given** `docs/app-tour.md`, **When** un revisor lo lee, **Then** entiende el propósito de las 7 secciones del panel en < 5 minutos: Dashboard, Reglas, Auditoría, Blacklist, Templates, DLQ, y el home público.
+2. **Given** el tour, **When** cubre cada sección, **Then** incluye: para qué sirve, qué rol tiene acceso, qué acción típica hacer (con el comando o pasos exactos para llegar a ese estado con datos de demo), y qué observar en pantalla.
+3. **Given** el tour, **When** se lee junto con el README, **Then** no hay contradicción — el tour referencia el setup del README, no lo repite.
+4. **Given** el home en `/`, **When** incluye un link a `docs/app-tour.md` en el repo, **Then** el revisor puede llegar al tour desde la landing sin buscar en el filesystem.
+
+---
+
 ### Edge Cases
 
 - ¿Qué pasa si `/metrics` se consulta con la base de datos caída? → Debe responder 503 con un body mínimo, no 500 con stack trace.
@@ -135,6 +151,8 @@ El panel admin (`/admin/*`) se construyó incrementalmente fase por fase prioriz
 - **FR-010**: El README MUST contener una sección "Crear una notificación nueva" con pasos concretos ejecutados dentro de los contenedores (crear archivo en código montado, opcional crear regla, opcional crear template, probar via `docker compose exec`) — máximo 1 página.
 - **FR-011**: El proyecto MUST incluir un runbook operacional (`docs/runbook.md`) cubriendo al menos: DLQ saturada, bounce rate alto, Sendgrid down, partición de auditoría faltante.
 - **FR-012**: Las métricas expuestas en `/metrics` MUST tener overhead < 50 ms por scrape (validable con `docker compose exec app curl /metrics` y `time`).
+- **FR-018**: El proyecto MUST incluir `docs/app-tour.md` con una sección por cada área del panel admin (Dashboard, Reglas, Auditoría, Blacklist, Templates, DLQ) más el home público. Cada sección MUST incluir: propósito en 2-3 líneas, roles con acceso, acción típica con pasos exactos (usando datos del seed), y qué observar como resultado.
+- **FR-019**: El home `/` MUST enlazar al `docs/app-tour.md` en el repositorio (link absoluto al repo GitHub) de forma visible en el footer o en la sección de endpoints.
 - **FR-013**: Las alarmas recomendadas (queue_depth > N, dlq_size > N, bounce_rate > X%, error_rate > Y%) MUST estar documentadas con umbrales sugeridos y rationale en el runbook, aunque la configuración de alarmas en sí dependa del proveedor cloud y queda fuera del scope de código.
 - **FR-014**: La aplicación MUST exponer una ruta pública `GET /` (sin autenticación) que renderice un landing con descripción del producto, flujo conceptual, y links a panel admin + repositorio. Si hay sesión admin activa, debe mostrar un CTA "Ir al dashboard".
 - **FR-015**: El panel admin MUST tener un sistema de diseño consistente: un único layout base reutilizado por todas las secciones, componentes compartidos para tablas, formularios, botones (`primary`/`secondary`/`danger`), mensajes flash, y badges de estado. No deben coexistir múltiples estilos para el mismo componente.
@@ -161,6 +179,7 @@ El panel admin (`/admin/*`) se construyó incrementalmente fase por fase prioriz
 - **SC-006**: Un on-call sin contexto previo resuelve un escenario simulado de DLQ saturada en < 15 minutos siguiendo el runbook.
 - **SC-007**: Un visitante sin contexto abre `/` y, en < 30 segundos, identifica qué hace el sistema y cómo acceder al panel (validable con walkthrough cronometrado).
 - **SC-008**: Una auditoría visual de las 6+ vistas admin reporta cero inconsistencias en: layout base, componentes de tabla, semántica de botones, posicionamiento de flash, patrón de errores de form.
+- **SC-009**: Un revisor sin contexto previo lee `docs/app-tour.md` y ejecuta al menos 1 acción en cada sección del panel en < 15 minutos usando solo el tour y los datos del seed.
 
 ---
 

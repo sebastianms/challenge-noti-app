@@ -36,7 +36,7 @@ CREATE TABLE public.admin_users (
     locked_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT admin_users_role_chk CHECK (((role)::text = ANY (ARRAY[('admin'::character varying)::text, ('product'::character varying)::text, ('support'::character varying)::text, ('engineering'::character varying)::text])))
+    CONSTRAINT admin_users_role_chk CHECK (((role)::text = ANY ((ARRAY['admin'::character varying, 'product'::character varying, 'support'::character varying, 'engineering'::character varying])::text[])))
 );
 
 
@@ -184,9 +184,9 @@ CREATE TABLE public.notification_blacklist (
     source character varying(32) NOT NULL,
     reason text,
     created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
-    CONSTRAINT blacklist_scope_target_chk CHECK (((((scope)::text = 'global'::text) AND (target IS NULL)) OR (((scope)::text = ANY (ARRAY[('type'::character varying)::text, ('channel'::character varying)::text])) AND (target IS NOT NULL)))),
-    CONSTRAINT blacklist_scope_values_chk CHECK (((scope)::text = ANY (ARRAY[('global'::character varying)::text, ('type'::character varying)::text, ('channel'::character varying)::text]))),
-    CONSTRAINT blacklist_source_values_chk CHECK (((source)::text = ANY (ARRAY[('manual'::character varying)::text, ('admin_ui'::character varying)::text, ('hard_bounce'::character varying)::text, ('dropped'::character varying)::text, ('spamreport'::character varying)::text])))
+    CONSTRAINT blacklist_scope_target_chk CHECK (((((scope)::text = 'global'::text) AND (target IS NULL)) OR (((scope)::text = ANY ((ARRAY['type'::character varying, 'channel'::character varying])::text[])) AND (target IS NOT NULL)))),
+    CONSTRAINT blacklist_scope_values_chk CHECK (((scope)::text = ANY ((ARRAY['global'::character varying, 'type'::character varying, 'channel'::character varying])::text[]))),
+    CONSTRAINT blacklist_source_values_chk CHECK (((source)::text = ANY ((ARRAY['manual'::character varying, 'admin_ui'::character varying, 'hard_bounce'::character varying, 'dropped'::character varying, 'spamreport'::character varying])::text[])))
 );
 
 
@@ -400,7 +400,7 @@ CREATE TABLE public.rule_changes (
     before jsonb,
     after jsonb,
     changed_at timestamp(6) without time zone DEFAULT clock_timestamp() NOT NULL,
-    CONSTRAINT rule_changes_action_chk CHECK (((action)::text = ANY (ARRAY[('created'::character varying)::text, ('updated'::character varying)::text, ('deleted'::character varying)::text])))
+    CONSTRAINT rule_changes_action_chk CHECK (((action)::text = ANY ((ARRAY['created'::character varying, 'updated'::character varying, 'deleted'::character varying])::text[])))
 );
 
 

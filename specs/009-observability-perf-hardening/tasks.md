@@ -56,6 +56,11 @@ Convenciones: `[P]` paralelizable (archivos distintos), `[USx]` user story owner
 - [ ] T030 [P] [US4] Sección "Crear una notificación nueva" en README: pasos exactos para FooNotification (clase nueva + opcional regla + opcional template), todo via `docker compose exec`.
 - [ ] T031 [US4] `docs/runbook.md` con secciones: (a) DLQ saturada, (b) Bounce rate alto, (c) Sendgrid down, (d) Partición de auditoría faltante, (e) Alarmas recomendadas (umbrales sugeridos + rationale). Cada escenario: síntomas, diagnóstico, remediación, criterios de escalación.
 
+## US7 — Tour de la aplicación (P2)
+
+- [ ] T031b [P] [US7] `docs/app-tour.md` con sección por cada área del panel: Home, Dashboard, Reglas, Auditoría, Blacklist, Templates, DLQ. Cada sección: propósito (2-3 líneas), rol con acceso, acción típica con pasos usando datos de seed, qué observar en pantalla.
+- [ ] T031c [US7] Agregar link a `docs/app-tour.md` (URL absoluta al repo GitHub) en el footer de `app/views/home/show.html.erb`.
+
 ## US5 — Home page pública (P2)
 
 - [ ] T032 [P] [US5] `app/controllers/home_controller.rb` con action `show`, sin auth, sin layout admin.
@@ -81,7 +86,7 @@ Convenciones: `[P]` paralelizable (archivos distintos), `[USx]` user story owner
 - [ ] T046 ADL `.design-logs/ADL-016-tailwind-cdn-admin-design.md` — Tailwind CDN trade-offs, sidebar layout, partials compartidos, ruta de salida a precompilado.
 - [ ] T047 ADL `.design-logs/ADL-017-docker-compose-primary-dev.md` — Compose como camino primario, servicio worker dedicado, perfil `load-test`.
 - [ ] T048 Actualizar `specs/roadmap.md` Phase 10 → `[DONE]` con los 5 bullets verificados + nota de US5/US6 como extensión.
-- [ ] T049 Actualizar `MiniCentral De Notificaciones.md` Anexo A (features +1 = 9, ejemplos suite actualizados, ADLs +3 = 17).
+- [ ] T049 Actualizar `MiniCentral De Notificaciones.md` Anexo A (features +1 = 9, ejemplos suite actualizados, ADLs +3 = 17, mención de app-tour.md y runbook.md).
 - [ ] T050 Block checkpoint final: RuboCop 0 warnings, Brakeman 0 (con nuevo gate activo), bundle-audit clean, RSpec ≥ 90% coverage, Deckard review, commits por bloque (Setup, Foundational, US1, US2, US3, US4, US5, US6, Polish), push.
 
 ---
