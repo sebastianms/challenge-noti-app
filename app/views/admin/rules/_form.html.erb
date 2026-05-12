@@ -1,60 +1,55 @@
 <%= form_with model: rule,
       url: rule.persisted? ? admin_rule_path(rule) : admin_rules_path,
       local: true,
-      style: "background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);max-width:560px" do |f| %>
+      class: "bg-white rounded-xl border border-gray-200 p-6 max-w-lg space-y-4" do |f| %>
 
-  <% if rule.errors.any? %>
-    <div style="margin-bottom:1rem;padding:.75rem 1rem;background:#fdf0f0;border-radius:6px;color:#c0392b;font-size:.875rem">
-      <% rule.errors.full_messages.each do |msg| %>
-        <div><%= msg %></div>
-      <% end %>
-    </div>
-  <% end %>
+  <%= render "shared/form_errors", object: rule %>
 
-  <div style="margin-bottom:1rem">
-    <%= f.label :notification_type, "Tipo de notificación", style: "display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem;color:#444" %>
+  <div>
+    <%= f.label :notification_type, "Tipo de notificación",
+          class: "block text-sm font-medium text-gray-700 mb-1" %>
     <%= f.text_field :notification_type,
-          style: "width:100%;padding:.45rem .6rem;border:1px solid #ddd;border-radius:4px;font-size:.875rem",
-          disabled: rule.persisted? %>
+          disabled: rule.persisted?,
+          class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 #{'bg-gray-100' if rule.persisted?}" %>
   </div>
 
-  <div style="margin-bottom:1rem">
-    <%= f.label :priority, "Prioridad", style: "display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem;color:#444" %>
+  <div>
+    <%= f.label :priority, "Prioridad", class: "block text-sm font-medium text-gray-700 mb-1" %>
     <%= f.select :priority,
           options_for_select([["— ninguna —", nil], %w[critical critical], %w[standard standard], %w[bulk bulk]], rule.priority),
           {},
-          style: "width:100%;padding:.45rem .6rem;border:1px solid #ddd;border-radius:4px;font-size:.875rem" %>
+          class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
   </div>
 
-  <div style="margin-bottom:1rem">
-    <%= f.label :max_per_day, "Máx. por día", style: "display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem;color:#444" %>
+  <div>
+    <%= f.label :max_per_day, "Máx. por día", class: "block text-sm font-medium text-gray-700 mb-1" %>
     <%= f.number_field :max_per_day, min: 1,
-          style: "width:100%;padding:.45rem .6rem;border:1px solid #ddd;border-radius:4px;font-size:.875rem" %>
+          class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
   </div>
 
-  <div style="margin-bottom:1rem">
-    <%= f.label :cooldown_seconds, "Cooldown (segundos)", style: "display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem;color:#444" %>
+  <div>
+    <%= f.label :cooldown_seconds, "Cooldown (segundos)", class: "block text-sm font-medium text-gray-700 mb-1" %>
     <%= f.number_field :cooldown_seconds, min: 1,
-          style: "width:100%;padding:.45rem .6rem;border:1px solid #ddd;border-radius:4px;font-size:.875rem" %>
+          class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
   </div>
 
-  <div style="margin-bottom:1rem">
-    <%= f.label :digest_window_seconds, "Ventana digest (segundos)", style: "display:block;font-size:.85rem;font-weight:600;margin-bottom:.3rem;color:#444" %>
+  <div>
+    <%= f.label :digest_window_seconds, "Ventana digest (segundos)", class: "block text-sm font-medium text-gray-700 mb-1" %>
     <%= f.number_field :digest_window_seconds, min: 1,
-          style: "width:100%;padding:.45rem .6rem;border:1px solid #ddd;border-radius:4px;font-size:.875rem" %>
+          class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
   </div>
 
-  <div style="margin-bottom:1.25rem;display:flex;align-items:center;gap:.5rem">
-    <%= f.check_box :enabled, style: "width:1rem;height:1rem" %>
-    <%= f.label :enabled, "Regla activa", style: "font-size:.875rem;color:#444" %>
+  <div class="flex items-center gap-2">
+    <%= f.check_box :enabled, class: "w-4 h-4 rounded border-gray-300 text-indigo-600" %>
+    <%= f.label :enabled, "Regla activa", class: "text-sm text-gray-700" %>
   </div>
 
   <%= f.hidden_field :notification_type if rule.persisted? %>
 
-  <div style="display:flex;gap:.75rem">
+  <div class="flex gap-3 pt-2">
     <%= f.submit rule.persisted? ? "Guardar cambios" : "Crear regla",
-          style: "padding:.5rem 1.25rem;background:#1a1a2e;color:#fff;border:none;border-radius:6px;font-size:.875rem;cursor:pointer" %>
+          class: "px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition cursor-pointer" %>
     <%= link_to "Cancelar", admin_rules_path,
-          style: "padding:.5rem 1.25rem;background:#eee;color:#333;border-radius:6px;font-size:.875rem;text-decoration:none" %>
+          class: "px-5 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition" %>
   </div>
 <% end %>

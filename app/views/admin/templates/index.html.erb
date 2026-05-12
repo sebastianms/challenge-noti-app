@@ -1,35 +1,26 @@
-<h1>Templates de notificaciones</h1>
-
-<%= link_to "Nuevo override", new_admin_template_path %>
+<div class="flex items-center justify-between mb-6">
+  <h2 class="text-xl font-semibold text-gray-800">Templates de notificaciones</h2>
+  <%= link_to "Nuevo override", new_admin_template_path,
+        class: "inline-block px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition" %>
+</div>
 
 <% if @templates.empty? %>
-  <p>No hay overrides definidos. Los tipos usan el copy de sus archivos Ruby.</p>
+  <p class="text-sm text-gray-400">No hay overrides definidos. Los tipos usan el copy de sus archivos Ruby.</p>
 <% else %>
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Tipo</th>
-        <th>Locale</th>
-        <th>Title</th>
-        <th>Actualizado</th>
-        <th>Acciones</th>
+  <%= render "shared/table", headers: ["Tipo", "Locale", "Title", "Actualizado", ""] do %>
+    <% @templates.each do |tmpl| %>
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 text-sm font-medium text-gray-900"><%= tmpl.notification_type %></td>
+        <td class="px-4 py-3 text-sm text-gray-600"><%= tmpl.locale %></td>
+        <td class="px-4 py-3 text-sm text-gray-700"><%= truncate(tmpl.title, length: 60) %></td>
+        <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap"><%= tmpl.updated_at.strftime("%Y-%m-%d %H:%M") %></td>
+        <td class="px-4 py-3 text-sm text-right whitespace-nowrap space-x-3">
+          <%= link_to "Editar", edit_admin_template_path(tmpl), class: "text-indigo-600 hover:text-indigo-800" %>
+          <%= button_to "Eliminar", admin_template_path(tmpl), method: :delete,
+                data: { confirm: "¿Eliminar override? El tipo volverá al copy de Ruby." },
+                class: "btn-danger text-sm bg-transparent border-none cursor-pointer text-red-600 hover:text-red-800" %>
+        </td>
       </tr>
-    </thead>
-    <tbody>
-      <% @templates.each do |tmpl| %>
-        <tr>
-          <td><%= tmpl.notification_type %></td>
-          <td><%= tmpl.locale %></td>
-          <td><%= truncate(tmpl.title, length: 60) %></td>
-          <td><%= tmpl.updated_at.strftime("%Y-%m-%d %H:%M") %></td>
-          <td>
-            <%= link_to "Editar", edit_admin_template_path(tmpl) %>
-            <%= " | " %>
-            <%= button_to "Eliminar", admin_template_path(tmpl), method: :delete,
-                  data: { confirm: "¿Eliminar override? El tipo volverá al copy de Ruby." } %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+    <% end %>
+  <% end %>
 <% end %>

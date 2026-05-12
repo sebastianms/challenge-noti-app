@@ -70,14 +70,14 @@ Convenciones: `[P]` paralelizable (archivos distintos), `[USx]` user story owner
 
 ## US6 — Diseño visual consistente (P3)
 
-- [ ] T036 [US6] Refactor `app/views/layouts/admin.html.erb` para usar `_sidebar.html.erb` y `_flash.html.erb`. Eliminar nav inline existente.
-- [ ] T037 [P] [US6] Refactor `app/views/admin/dashboard/index.html.erb` con clases Tailwind consistentes (cards, grid, chart wrappers).
-- [ ] T038 [P] [US6] Refactor `app/views/admin/rules/` (index, _form, edit, new) con `_table` + `_form_errors`.
-- [ ] T039 [P] [US6] Refactor `app/views/admin/audits/` con `_table` + filtros estilizados.
-- [ ] T040 [P] [US6] Refactor `app/views/admin/blacklist/` con `_table` + `_form_errors`.
-- [ ] T041 [P] [US6] Refactor `app/views/admin/templates/` (index, _form, _preview, edit, new) con `_table` + `_form_errors`.
-- [ ] T042 [P] [US6] Refactor `app/views/admin/dlq/index.html.erb` con grupos colapsables + `btn-danger` para discard.
-- [ ] T043 [US6] System spec `spec/system/admin_visual_consistency_spec.rb` — recorre las 6 vistas, verifica `data-admin-sidebar`, `admin-table`, `btn-danger`, `data-flash-container`.
+- [x] T036 [US6] Refactor `app/views/layouts/admin.html.erb` para usar `_sidebar.html.erb` y `_flash.html.erb`. Eliminar nav inline existente.
+- [x] T037 [P] [US6] Refactor `app/views/admin/dashboard/index.html.erb` con clases Tailwind consistentes (cards, grid, chart wrappers).
+- [x] T038 [P] [US6] Refactor `app/views/admin/rules/` (index, _form, edit, new) con `_table` + `_form_errors`.
+- [x] T039 [P] [US6] Refactor `app/views/admin/audits/` con `_table` + filtros estilizados.
+- [x] T040 [P] [US6] Refactor `app/views/admin/blacklist/` con `_table` + `_form_errors`.
+- [x] T041 [P] [US6] Refactor `app/views/admin/templates/` (index, _form, _preview, edit, new) con `_table` + `_form_errors`.
+- [x] T042 [P] [US6] Refactor `app/views/admin/dlq/index.html.erb` con grupos colapsables + `btn-danger` para discard.
+- [x] T043 [US6] System spec `spec/system/admin_visual_consistency_spec.rb` — recorre las 6 vistas, verifica `data-admin-sidebar`, `admin-table`, `btn-danger`, `data-flash-container`.
 
 ## Polish
 

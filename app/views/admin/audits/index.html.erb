@@ -1,74 +1,76 @@
-<h1>Auditoría de notificaciones</h1>
+<div class="flex items-center justify-between mb-6">
+  <h2 class="text-xl font-semibold text-gray-800">Auditoría de notificaciones</h2>
+</div>
 
-<%= form_with url: admin_audits_path, method: :get, local: true do |f| %>
-  <fieldset>
-    <legend>Filtros</legend>
-    <p>
-      <%= f.label :correlation_id %>
-      <%= f.text_field :correlation_id, value: @filters[:correlation_id] %>
-    </p>
-    <p>
-      <%= f.label :recipient %>
-      <%= f.text_field :recipient, value: @filters[:recipient] %>
-    </p>
-    <p>
-      <%= f.label :status %>
-      <%= f.text_field :status, value: @filters[:status] %>
-    </p>
-    <p>
-      <%= f.label :source %>
-      <%= f.text_field :source, value: @filters[:source] %>
-    </p>
-    <p>
-      <%= f.label :reason, "Motivo (reason)" %>
-      <%= f.text_field :reason, value: @filters[:reason] %>
-    </p>
-    <p>
-      <%= f.label :rule_id, "ID de regla" %>
-      <%= f.text_field :rule_id, value: @filters[:rule_id] %>
-    </p>
-    <p>
-      <%= f.label :from, "Desde" %>
-      <%= f.datetime_local_field :from, value: @filters[:from] %>
-    </p>
-    <p>
-      <%= f.label :to, "Hasta" %>
-      <%= f.datetime_local_field :to, value: @filters[:to] %>
-    </p>
-    <p>
-      <%= f.submit "Buscar" %>
-      <%= link_to "Exportar CSV", admin_audits_path(@filters.merge(format: :csv)), style: "margin-left: 1rem;" %>
-    </p>
-  </fieldset>
+<div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+  <%= form_with url: admin_audits_path, method: :get, local: true do |f| %>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+      <div>
+        <%= f.label :correlation_id, "Correlation ID", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.text_field :correlation_id, value: @filters[:correlation_id],
+              class: "w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" %>
+      </div>
+      <div>
+        <%= f.label :recipient, "Destinatario", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.text_field :recipient, value: @filters[:recipient],
+              class: "w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" %>
+      </div>
+      <div>
+        <%= f.label :status, "Estado", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.text_field :status, value: @filters[:status],
+              class: "w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" %>
+      </div>
+      <div>
+        <%= f.label :source, "Fuente", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.text_field :source, value: @filters[:source],
+              class: "w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" %>
+      </div>
+      <div>
+        <%= f.label :reason, "Motivo", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.text_field :reason, value: @filters[:reason],
+              class: "w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" %>
+      </div>
+      <div>
+        <%= f.label :rule_id, "ID de regla", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.text_field :rule_id, value: @filters[:rule_id],
+              class: "w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" %>
+      </div>
+      <div>
+        <%= f.label :from, "Desde", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.datetime_local_field :from, value: @filters[:from],
+              class: "w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" %>
+      </div>
+      <div>
+        <%= f.label :to, "Hasta", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.datetime_local_field :to, value: @filters[:to],
+              class: "w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-indigo-400 focus:outline-none" %>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <%= f.submit "Buscar", class: "px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition cursor-pointer" %>
+      <%= link_to "Exportar CSV", admin_audits_path(@filters.merge(format: :csv)),
+            class: "px-4 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition" %>
+    </div>
+  <% end %>
+</div>
+
+<p class="text-sm text-gray-500 mb-3">
+  Total: <strong><%= @total %></strong>
+  &middot; Página <%= @page %> &middot; <%= @per_page %> por página
+</p>
+
+<%= render "shared/table",
+      headers: ["Fecha", "Correlation ID", "Destinatario", "Tipo", "Estado", "Fuente", "Canal", "Motivo", "Regla", ""] do %>
+  <%= render partial: "row", collection: @items, as: :audit %>
 <% end %>
 
-<p>Total: <strong><%= @total %></strong> · Página <%= @page %> · <%= @per_page %> por página</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>created_at</th>
-      <th>correlation_id</th>
-      <th>recipient</th>
-      <th>tipo</th>
-      <th>status</th>
-      <th>source</th>
-      <th>channel</th>
-      <th>reason</th>
-      <th>rule_id</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <%= render partial: "row", collection: @items, as: :audit %>
-  </tbody>
-</table>
-
-<nav>
+<nav class="flex gap-4 mt-4">
   <% if @page > 1 %>
-    <%= link_to "« Anterior", admin_audits_path(@filters.merge(page: @page - 1)) %>
+    <%= link_to "« Anterior", admin_audits_path(@filters.merge(page: @page - 1)),
+          class: "text-sm text-indigo-600 hover:text-indigo-800" %>
   <% end %>
   <% if @has_next %>
-    <%= link_to "Siguiente »", admin_audits_path(@filters.merge(page: @page + 1)) %>
+    <%= link_to "Siguiente »", admin_audits_path(@filters.merge(page: @page + 1)),
+          class: "text-sm text-indigo-600 hover:text-indigo-800" %>
   <% end %>
 </nav>

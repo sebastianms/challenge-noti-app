@@ -1,3 +1,5 @@
-<h1>Nuevo template override</h1>
+<h2 class="text-xl font-semibold text-gray-800 mb-6">Nuevo template override</h2>
 <%= render "form", template: @template %>
-<%= link_to "Volver", admin_templates_path %>
+<div class="mt-4">
+  <%= link_to "Volver", admin_templates_path, class: "text-sm text-indigo-600 hover:text-indigo-800" %>
+</div>

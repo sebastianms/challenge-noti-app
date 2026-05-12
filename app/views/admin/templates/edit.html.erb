@@ -1,29 +1,40 @@
-<h1>Editar template: <%= @template.notification_type %></h1>
+<h2 class="text-xl font-semibold text-gray-800 mb-6">Editar template: <%= @template.notification_type %></h2>
 
 <%= render "form", template: @template %>
 
-<hr>
-<h3>Preview en vivo</h3>
-<p>Pegá un JSON de contexto de ejemplo (ej: <code>{"name":"Ana"}</code>) y enviá para ver cómo quedaría el copy.</p>
+<div class="mt-8 bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">
+  <h3 class="text-base font-semibold text-gray-800 mb-1">Preview en vivo</h3>
+  <p class="text-sm text-gray-500 mb-4">
+    Pegá un JSON de contexto de ejemplo (ej: <code class="bg-gray-100 px-1 rounded">{"name":"Ana"}</code>)
+    y enviá para ver cómo quedaría el copy.
+  </p>
 
-<%= form_with url: preview_admin_template_path(@template), method: :post, local: true do |f| %>
-  <p>
-    <%= label_tag :title_preview, "Title" %>
-    <%= text_area_tag :title, @template.title, rows: 2, cols: 80 %>
-  </p>
-  <p>
-    <%= label_tag :body_preview, "Body" %>
-    <%= text_area_tag :body, @template.body, rows: 4, cols: 80 %>
-  </p>
-  <p>
-    <%= label_tag :digest_template_preview, "Digest template" %>
-    <%= text_area_tag :digest_template, @template.digest_template, rows: 2, cols: 80 %>
-  </p>
-  <p>
-    <%= label_tag :context_json, "Contexto JSON (para preview)" %>
-    <%= text_field_tag :context_json, "{}", size: 60 %>
-  </p>
-  <%= submit_tag "Ver preview" %>
-<% end %>
+  <%= form_with url: preview_admin_template_path(@template), method: :post, local: true, class: "space-y-3" do |f| %>
+    <div>
+      <%= label_tag :title_preview, "Title", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= text_area_tag :title, @template.title, rows: 2,
+            class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
+    </div>
+    <div>
+      <%= label_tag :body_preview, "Body", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= text_area_tag :body, @template.body, rows: 4,
+            class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
+    </div>
+    <div>
+      <%= label_tag :digest_template_preview, "Digest template", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= text_area_tag :digest_template, @template.digest_template, rows: 2,
+            class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
+    </div>
+    <div>
+      <%= label_tag :context_json, "Contexto JSON (para preview)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= text_field_tag :context_json, "{}",
+            class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
+    </div>
+    <%= submit_tag "Ver preview",
+          class: "px-5 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition cursor-pointer" %>
+  <% end %>
+</div>
 
-<%= link_to "Volver", admin_templates_path %>
+<div class="mt-4">
+  <%= link_to "Volver", admin_templates_path, class: "text-sm text-indigo-600 hover:text-indigo-800" %>
+</div>

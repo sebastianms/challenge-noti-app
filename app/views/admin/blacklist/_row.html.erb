@@ -1,15 +1,14 @@
-<tr>
-  <td><%= entry.created_at.iso8601 %></td>
-  <td><%= entry.recipient_canonical %></td>
-  <td><%= entry.scope %></td>
-  <td><%= entry.target %></td>
-  <td><%= entry.source %></td>
-  <td><%= truncate(entry.reason.to_s, length: 80) %></td>
-  <td>
-    <%= button_to "Remover",
-                  admin_blacklist_path(entry.id),
-                  method: :delete,
-                  params: { reason: "removed via admin UI" },
-                  data: { confirm: "¿Confirmar remoción?" } %>
+<tr class="hover:bg-gray-50">
+  <td class="px-4 py-2 text-xs text-gray-500 whitespace-nowrap"><%= entry.created_at.strftime("%Y-%m-%d %H:%M") %></td>
+  <td class="px-4 py-2 text-sm text-gray-800"><%= entry.recipient_canonical %></td>
+  <td class="px-4 py-2 text-sm text-gray-600"><%= entry.scope %></td>
+  <td class="px-4 py-2 text-sm text-gray-600"><%= entry.target %></td>
+  <td class="px-4 py-2 text-sm text-gray-500"><%= entry.source %></td>
+  <td class="px-4 py-2 text-sm text-gray-500"><%= truncate(entry.reason.to_s, length: 80) %></td>
+  <td class="px-4 py-2 text-sm text-right">
+    <%= button_to "Remover", admin_blacklist_path(entry.id), method: :delete,
+          params: { reason: "removed via admin UI" },
+          data: { confirm: "¿Confirmar remoción?" },
+          class: "btn-danger text-xs px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition" %>
   </td>
 </tr>
