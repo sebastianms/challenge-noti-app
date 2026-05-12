@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Parses a k6 JSON summary and generates a markdown report with PASS/FAIL verdict.
+# Usage: bin/load_report <k6-summary.json> [output.md]
+
+require "json"
+require "time"
+
+SLO_P95_MS    = 200.0
+SLO_ERROR_RATE = 0.01
+
+def parse_summary(path)
+  raw     = JSON.parse(File.read(path))
+  metrics = raw["metrics"]
+
+  dur = metrics["http_req_duration"] || {}
+
+  {
+    p95:         (dur["p(95)"] || 0.0).round(2),
+    avg:         (dur["avg"]   || 0.0).round(2),
+    min:         (dur["min"]   || 0.0).round(2),
+    max:         (dur["max"]   || 0.0).round(2),
+    error_rate:  (metrics.dig("http_req_failed", "value") || 0.0).round(4),
+    iterations:  (metrics.dig("iterations", "count") || 0).to_i,
+    interrupted: raw["state"] == "interrupted"
+  }
+end
+
+def verdict(data)
+  p95_ok    = data[:p95]    <= SLO_P95_MS
+  error_ok  = data[:error_rate] < SLO_ERROR_RATE
+  p95_ok && error_ok ? "PASS" : "FAIL"
+end
+
+def generate_report(data, source_file)
+  v = verdict(data)
+  status_line = data[:interrupted] ? " ⚠️  INTERRUMPIDO — reporte parcial." : ""
+
+  <<~MD
+    # Load Test Report — #{Time.now.strftime("%Y-%m-%d %H:%M UTC")}#{status_line}
+
+    **Fuente**: `#{source_file}`
+
+    ## Resultado: #{v == "PASS" ? "✅ PASS" : "❌ FAIL"}
+
+    ## Métricas de latencia (http_req_duration)
+
+    | Percentil / Stat | Valor (ms) | SLO (p95 < #{SLO_P95_MS} ms) |
+    |---|---|---|
+    | p95 | **#{data[:p95]}** | #{data[:p95] <= SLO_P95_MS ? "✅" : "❌"} |
+    | avg | #{data[:avg]} | — |
+    | min | #{data[:min]} | — |
+    | max | #{data[:max]} | — |
+
+    ## Tasa de errores
+
+    | Métrica | Valor | SLO (< #{(SLO_ERROR_RATE * 100).round(1)}%) |
+    |---|---|---|
+    | error rate | #{(data[:error_rate] * 100).round(2)}% | #{data[:error_rate] < SLO_ERROR_RATE ? "✅" : "❌"} |
+    | iterations | #{data[:iterations]} | — |
+
+    ## Conclusión
+
+    #{v == "PASS" \
+      ? "El sistema cumple los SLOs definidos. p95 de ingesta #{data[:p95]} ms < #{SLO_P95_MS} ms y error rate #{(data[:error_rate] * 100).round(2)}% < #{(SLO_ERROR_RATE * 100).round(1)}%." \
+      : "El sistema **no cumple** los SLOs. Revisar: #{data[:p95] > SLO_P95_MS ? "p95 #{data[:p95]} ms supera límite #{SLO_P95_MS} ms. " : ""}#{data[:error_rate] >= SLO_ERROR_RATE ? "Error rate #{(data[:error_rate] * 100).round(2)}% supera límite #{(SLO_ERROR_RATE * 100).round(1)}%." : ""}"}
+  MD
+end
+
+input_file  = ARGV[0]
+output_file = ARGV[1]
+
+unless input_file && File.exist?(input_file)
+  warn "Uso: bin/load_report <k6-summary.json> [output.md]"
+  exit 1
+end
+
+data   = parse_summary(input_file)
+report = generate_report(data, input_file)
+
+if output_file
+  File.write(output_file, report)
+  puts "Reporte guardado en #{output_file}"
+else
+  puts report
+end
+
+exit(verdict(data) == "PASS" ? 0 : 1)

@@ -6,6 +6,10 @@ Rails.application.routes.draw do
   get "up"      => "rails/health#show", as: :rails_health_check
   get "metrics" => "metrics#show"
 
+  namespace :internal do
+    post "ingest", to: "ingest#create"
+  end
+
   namespace :webhooks do
     post "sendgrid", to: "sendgrid_events#create"
   end

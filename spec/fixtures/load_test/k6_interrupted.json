@@ -1,0 +1,18 @@
+{
+  "state": "interrupted",
+  "metrics": {
+    "http_req_duration": {
+      "avg": 60.0,
+      "min": 10.0,
+      "max": 190.0,
+      "p(90)": 140.0,
+      "p(95)": 155.0
+    },
+    "http_req_failed": {
+      "value": 0.003
+    },
+    "iterations": {
+      "count": 5000
+    }
+  }
+}

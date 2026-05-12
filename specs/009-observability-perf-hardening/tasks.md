@@ -36,12 +36,12 @@ Convenciones: `[P]` paralelizable (archivos distintos), `[USx]` user story owner
 
 ## US2 — Load test 140 rps × 1h (P1)
 
-- [ ] T019 [P] [US2] `specs/009-observability-perf-hardening/load/scenario.js` — k6 scenario: constant arrival rate 140 rps, duration 1h, POST a endpoint de ingesta (definir si exponemos `/internal/ingest` o usamos un task).
-- [ ] T020 [P] [US2] Decisión: agregar route interna `POST /internal/ingest` (auth Basic con `LOAD_TEST_BASIC_AUTH_*`) que llama `TestNotification.send(...)` con un payload mínimo — solo habilitada si ENV `ALLOW_LOAD_TEST_INGEST=1`. Documentar el riesgo de superficie en runbook.
-- [ ] T021 [US2] Controller `app/controllers/internal/ingest_controller.rb` + spec request básico.
-- [ ] T022 [P] [US2] `bin/load_report` — script Ruby ejecutable que parsea k6 JSON (`metrics.http_req_duration.values`, `metrics.iterations.count`, `metrics.http_req_failed.values.rate`) → genera markdown con tabla + verdict PASS/FAIL contra SLO.
-- [ ] T023 [P] [US2] Spec `spec/bin/load_report_spec.rb` — fixture JSON de k6 sample → output esperado.
-- [ ] T024 [US2] Ejecutar baseline real: `docker compose --profile load-test up k6` con duración reducida (5 min en lugar de 1h) para validar pipeline. Commitear el reporte como `specs/009-.../reports/load-test-baseline-<fecha>.md`.
+- [x] T019 [P] [US2] `specs/009-observability-perf-hardening/load/scenario.js` — k6 scenario: constant arrival rate 140 rps, duration configurable (default 1h), POST a `/internal/ingest`.
+- [x] T020 [P] [US2] Decisión: `POST /internal/ingest` habilitada solo con `ALLOW_LOAD_TEST_INGEST=1` + credenciales `LOAD_TEST_BASIC_AUTH_*`. Docker Compose expone las vars via interpolación de host. `config.hosts << "app"` agregado en development para permitir requests desde red Docker.
+- [x] T021 [US2] Controller `app/controllers/internal/ingest_controller.rb` + spec request básico (201/400/401/503).
+- [x] T022 [P] [US2] `bin/load_report` — parsea k6 summary JSON (formato flat: `http_req_duration["p(95)"]`, `http_req_failed["value"]`, `iterations["count"]`) → markdown con tabla + verdict PASS/FAIL.
+- [x] T023 [P] [US2] Spec `spec/bin/load_report_spec.rb` — 3 fixtures (pass/fail/interrupted) → output y exit code esperados.
+- [x] T024 [US2] Baseline 5 min a 140 rps: 34609 iter, 0% error rate, p95=2017ms (FAIL en latencia — entorno dev local, proceso único). Reporte en `specs/009-.../reports/load-test-baseline-2026-05-12.md`.
 
 ## US3 — CI gates Brakeman + bundle-audit (P2)
 

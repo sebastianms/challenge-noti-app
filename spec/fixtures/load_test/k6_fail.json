@@ -1,0 +1,18 @@
+{
+  "state": "completed",
+  "metrics": {
+    "http_req_duration": {
+      "avg": 180.0,
+      "min": 50.0,
+      "max": 850.0,
+      "p(90)": 280.0,
+      "p(95)": 320.5
+    },
+    "http_req_failed": {
+      "value": 0.025
+    },
+    "iterations": {
+      "count": 38000
+    }
+  }
+}
