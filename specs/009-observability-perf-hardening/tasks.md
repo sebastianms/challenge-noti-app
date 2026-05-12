@@ -51,10 +51,10 @@ Convenciones: `[P]` paralelizable (archivos distintos), `[USx]` user story owner
 
 ## US4 — Docs setup Docker + crear notif + runbook (P2)
 
-- [ ] T028 [US4] Reescribir sección "Setup" del README como "Setup con Docker": pre-requisitos (Docker ≥ 24, puertos 3000/5432 libres), comandos copy-paste-ables desde `git clone` hasta `docker compose exec app bin/rspec` verde.
-- [ ] T029 [P] [US4] Sección "Probar la aplicación" en README: login admin (con seeds), disparar notificación via console, verificar audit, ver dashboard. Comandos + outputs esperados.
-- [ ] T030 [P] [US4] Sección "Crear una notificación nueva" en README: pasos exactos para FooNotification (clase nueva + opcional regla + opcional template), todo via `docker compose exec`.
-- [ ] T031 [US4] `docs/runbook.md` con secciones: (a) DLQ saturada, (b) Bounce rate alto, (c) Sendgrid down, (d) Partición de auditoría faltante, (e) Alarmas recomendadas (umbrales sugeridos + rationale). Cada escenario: síntomas, diagnóstico, remediación, criterios de escalación.
+- [x] T028 [US4] Reescribir sección "Setup" del README como "Setup con Docker": pre-requisitos (Docker ≥ 24, puertos 3000/5432 libres), comandos copy-paste-ables desde `git clone` hasta `docker compose exec app bin/rspec` verde.
+- [x] T029 [P] [US4] Sección "Probar la aplicación" en README: login admin (con seeds), disparar notificación via console, verificar audit, ver dashboard. Comandos + outputs esperados.
+- [x] T030 [P] [US4] Sección "Crear una notificación nueva" en README: pasos exactos para FooNotification (clase nueva + opcional regla + opcional template), todo via `docker compose exec`.
+- [x] T031 [US4] `docs/runbook.md` con secciones: (a) DLQ saturada, (b) Bounce rate alto, (c) Sendgrid down, (d) Partición de auditoría faltante, (e) Alarmas recomendadas (umbrales sugeridos + rationale). Cada escenario: síntomas, diagnóstico, remediación, criterios de escalación.
 
 ## US7 — Tour de la aplicación (P2)
 

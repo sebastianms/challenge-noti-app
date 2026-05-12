@@ -7,63 +7,171 @@
 
 Plataforma de notificaciones centralizada para equipos internos. Un solo archivo por tipo de notificación, idempotencia garantizada por SHA256 + `UNIQUE` constraint en Postgres.
 
-## Requisitos
+## Setup con Docker
 
-- Ruby 3.3
-- PostgreSQL 17
-- Docker (para desarrollo local)
+### Pre-requisitos
 
-## Inicio rápido
+- Docker ≥ 24 (`docker --version`)
+- Puerto **3000** (app) y **5432** (postgres) libres en el host
+- No se requiere Ruby local
 
-### Con Docker (recomendado)
+### Desde cero hasta tests verdes
 
 ```bash
-# Levantar base de datos y servidor de desarrollo
-docker compose up -d postgres app
+# 1. Clonar el repositorio
+git clone https://github.com/sebastianms/challenge-noti-app.git
+cd challenge-noti-app
 
-# Crear y migrar la base de datos (primera vez)
-docker compose exec app bin/rails db:create db:migrate
+# 2. Levantar base de datos
+docker compose up -d postgres
 
-# Correr los specs dentro del contenedor
+# 3. Crear base de datos y migrar
+docker compose run --rm test bin/rails db:create db:migrate
+
+# 4. (Opcional) Cargar datos de seed
+docker compose exec app bin/rails db:seed
+
+# 5. Verificar que la suite pasa
 docker compose run --rm test
+# → 643 examples, 0 failures
 ```
 
-### Sin Docker (Rails nativo)
+Para levantar el servidor de desarrollo:
 
 ```bash
-docker compose up -d postgres       # solo la base de datos
-bin/rails db:create db:migrate
-bundle exec rspec
+docker compose up app
+# → Puma running on http://0.0.0.0:3000
 ```
 
-## Agregar una notificación nueva
+### Servicios Docker disponibles
 
-Crea un archivo en `app/notifications/`:
+| Servicio | Comando | Descripción |
+|----------|---------|-------------|
+| `postgres` | `docker compose up -d postgres` | PostgreSQL 17 en el puerto 5432 |
+| `app` | `docker compose up app` | Rails dev server en `localhost:3000` |
+| `worker` | `docker compose up worker` | Worker de despacho (separado del servidor) |
+| `test` | `docker compose run --rm test` | Ejecuta `bundle exec rspec` y termina |
+
+## Probar la aplicación
+
+Con `db:seed` ejecutado, la aplicación tiene 4 usuarios admin listos:
+
+| Email | Contraseña | Rol |
+|-------|------------|-----|
+| `admin@noti-central.local` | `Admin12345678!` | admin |
+| `product@noti-central.local` | `Admin12345678!` | product |
+| `support@noti-central.local` | `Admin12345678!` | support |
+| `engineering@noti-central.local` | `Admin12345678!` | engineering |
+
+### Login y dashboard
+
+1. Abre `http://localhost:3000/admin/login` en el navegador.
+2. Ingresa con `admin@noti-central.local` / `Admin12345678!`.
+3. Verás el dashboard con métricas en tiempo real (queue depth, bounce rate, etc.).
+
+### Disparar una notificación desde consola
+
+```bash
+docker compose exec app bin/rails console
+```
 
 ```ruby
-# app/notifications/birthday_notification.rb
-class BirthdayNotification < AbstractNotification
-  notification_type :birthday
+# Dentro de la consola Rails:
+result = WelcomeNotification.send("test@example.com", context: { name: "Prueba" })
+result.state           # => :created
+result.correlation_id  # => "corr-uuid-..."
+
+# Segundo envío en la misma ventana de idempotencia → no duplica
+result2 = WelcomeNotification.send("test@example.com", context: { name: "Prueba" })
+result2.state          # => :duplicate
+```
+
+### Verificar el audit trail
+
+```bash
+docker compose exec app bin/rails console
+```
+
+```ruby
+NotificationAudit.last(3).map { |a| [a.correlation_id, a.status, a.source] }
+# => [["corr-...", "sent", "internal"], ...]
+```
+
+O desde el panel: `http://localhost:3000/admin/audits`.
+
+## Crear una notificación nueva
+
+Ejemplo completo: `FooNotification` con regla opcional y template opcional.
+
+### 1. Crear la clase
+
+```bash
+docker compose exec app bin/rails console
+# (o directamente editar el archivo)
+```
+
+Crea `app/notifications/foo_notification.rb`:
+
+```ruby
+class FooNotification < AbstractNotification
+  notification_type "foo"
+  idempotency_window 10.minutes
 
   def self.title(context = {})
-    "¡Feliz cumpleaños, #{context[:name]}!"
+    "Foo: #{context[:event]}"
   end
 
-  def self.body(_context = {})
-    "Hoy te deseamos un excelente día."
+  def self.body(context = {})
+    "Ocurrió el evento #{context[:event]} en #{context[:timestamp]}."
   end
 end
 ```
 
-Invócala desde cualquier parte del monolito:
+### 2. (Opcional) Agregar una regla de throttle
 
-```ruby
-result = BirthdayNotification.send("juan@example.com", context: { name: "Juan" })
-result.created?        # => true
-result.correlation_id  # => "uuid-..."
+En el panel admin (`/admin/rules`) o via consola:
+
+```bash
+docker compose exec app bin/rails console
 ```
 
-El segundo envío idéntico dentro de la ventana retorna `:duplicate` sin crear una fila nueva.
+```ruby
+NotificationRule.create!(
+  notification_type: "foo",
+  rule_type:         "cooldown",
+  parameters:        { "window_seconds" => 3600 },
+  enabled:           true
+)
+```
+
+### 3. (Opcional) Crear un template personalizado
+
+```bash
+docker compose exec app bin/rails console
+```
+
+```ruby
+NotificationTemplate.create!(
+  notification_type: "foo",
+  channel:           "email",
+  subject:           "Evento {{event}}",
+  body:              "Hola, ocurrió {{event}} a las {{timestamp}}."
+)
+```
+
+### 4. Enviar
+
+```bash
+docker compose exec app bin/rails console
+```
+
+```ruby
+result = FooNotification.send("ops@example.com", context: { event: "deploy", timestamp: Time.current.iso8601 })
+result.state           # => :created
+result.correlation_id  # => "corr-..."
+```
+
+Verifica en `/admin/audits` que aparece el registro con `status: sent`.
 
 ## Benchmark de carga
 
