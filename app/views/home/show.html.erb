@@ -1,0 +1,119 @@
+<%
+  repo_url     = "https://github.com/sebastianms/challenge-noti-app"
+  app_tour_url = "#{repo_url}/blob/main/docs/app-tour.md"
+  runbook_url  = "#{repo_url}/blob/main/docs/runbook.md"
+%>
+<div class="min-h-screen bg-gray-50 flex flex-col">
+
+  <%# ── Hero ──────────────────────────────────────────────────────────────── %>
+  <header class="bg-white border-b border-gray-200 py-16 px-6 text-center">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">Central de Notificaciones</h1>
+    <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+      Plataforma centralizada para envío de notificaciones multicanal.
+      Idempotencia garantizada, motor de reglas configurable y auditoría completa.
+    </p>
+    <% if admin_user_signed_in? %>
+      <%= link_to "Ir al panel", admin_dashboard_path,
+            class: "inline-block bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-indigo-700 transition" %>
+    <% else %>
+      <%= link_to "Ingresar", new_admin_user_session_path,
+            class: "inline-block bg-indigo-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-indigo-700 transition" %>
+    <% end %>
+  </header>
+
+  <%# ── Flujo 4 pasos ─────────────────────────────────────────────────────── %>
+  <section class="max-w-5xl mx-auto px-6 py-14 w-full">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-8 text-center">Cómo funciona</h2>
+    <ol class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <li class="bg-white rounded-xl border border-gray-200 p-6">
+        <span class="text-3xl font-bold text-indigo-500 block mb-3">01</span>
+        <h3 class="font-semibold text-gray-900 mb-2">Ingesta</h3>
+        <p class="text-sm text-gray-600">
+          El caller invoca la clase de notificación con un destinatario y contexto.
+          El sistema genera un hash de idempotencia SHA-256 y persiste el evento.
+        </p>
+      </li>
+      <li class="bg-white rounded-xl border border-gray-200 p-6">
+        <span class="text-3xl font-bold text-indigo-500 block mb-3">02</span>
+        <h3 class="font-semibold text-gray-900 mb-2">Decisión</h3>
+        <p class="text-sm text-gray-600">
+          El motor de reglas evalúa throttles, cooldowns y blacklist.
+          Si el evento pasa los filtros, se encola para despacho.
+        </p>
+      </li>
+      <li class="bg-white rounded-xl border border-gray-200 p-6">
+        <span class="text-3xl font-bold text-indigo-500 block mb-3">03</span>
+        <h3 class="font-semibold text-gray-900 mb-2">Despacho</h3>
+        <p class="text-sm text-gray-600">
+          El worker procesa la cola con reintentos exponenciales (1 min → 5 min → 25 min).
+          Los fallos permanentes pasan a DLQ para intervención manual.
+        </p>
+      </li>
+      <li class="bg-white rounded-xl border border-gray-200 p-6">
+        <span class="text-3xl font-bold text-indigo-500 block mb-3">04</span>
+        <h3 class="font-semibold text-gray-900 mb-2">Auditoría</h3>
+        <p class="text-sm text-gray-600">
+          Cada evento queda registrado con su estado, canal, payload y snapshot de reglas.
+          Los webhooks de SendGrid actualizan el estado en tiempo real.
+        </p>
+      </li>
+    </ol>
+  </section>
+
+  <%# ── Endpoints públicos ─────────────────────────────────────────────────── %>
+  <section class="max-w-5xl mx-auto px-6 pb-14 w-full">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Endpoints disponibles</h2>
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="text-left px-6 py-3 font-semibold text-gray-700">Método</th>
+            <th class="text-left px-6 py-3 font-semibold text-gray-700">Ruta</th>
+            <th class="text-left px-6 py-3 font-semibold text-gray-700">Descripción</th>
+            <th class="text-left px-6 py-3 font-semibold text-gray-700">Auth</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-3 font-mono text-indigo-600">GET</td>
+            <td class="px-6 py-3 font-mono">/up</td>
+            <td class="px-6 py-3 text-gray-600">Health check del servidor</td>
+            <td class="px-6 py-3 text-gray-500">—</td>
+          </tr>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-3 font-mono text-indigo-600">GET</td>
+            <td class="px-6 py-3 font-mono">/metrics</td>
+            <td class="px-6 py-3 text-gray-600">Métricas Prometheus (queue depth, bounce rate, etc.)</td>
+            <td class="px-6 py-3 text-gray-500">Basic Auth</td>
+          </tr>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-3 font-mono text-green-600">POST</td>
+            <td class="px-6 py-3 font-mono">/internal/ingest</td>
+            <td class="px-6 py-3 text-gray-600">Ingesta programática (load test / integraciones internas)</td>
+            <td class="px-6 py-3 text-gray-500">Basic Auth</td>
+          </tr>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-3 font-mono text-green-600">POST</td>
+            <td class="px-6 py-3 font-mono">/webhooks/sendgrid</td>
+            <td class="px-6 py-3 text-gray-600">Receptor de eventos de SendGrid (bounces, clicks, etc.)</td>
+            <td class="px-6 py-3 text-gray-500">Signature</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <%# ── Footer ─────────────────────────────────────────────────────────────── %>
+  <footer class="mt-auto border-t border-gray-200 bg-white py-8 px-6 text-center text-sm text-gray-500">
+    <div class="flex flex-wrap justify-center gap-6">
+      <%= link_to "Repositorio", repo_url, target: "_blank", rel: "noopener",
+            class: "hover:text-indigo-600 transition" %>
+      <%= link_to "Tour de la aplicación", app_tour_url, target: "_blank", rel: "noopener",
+            class: "hover:text-indigo-600 transition" %>
+      <%= link_to "Runbook operativo", runbook_url, target: "_blank", rel: "noopener",
+            class: "hover:text-indigo-600 transition" %>
+    </div>
+    <p class="mt-4 text-gray-400">Central de Notificaciones &copy; <%= Time.current.year %></p>
+  </footer>
+
+</div>

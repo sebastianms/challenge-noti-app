@@ -59,14 +59,14 @@ Convenciones: `[P]` paralelizable (archivos distintos), `[USx]` user story owner
 ## US7 — Tour de la aplicación (P2)
 
 - [x] T031b [P] [US7] `docs/app-tour.md` con sección por cada área del panel: Home, Dashboard, Reglas, Auditoría, Blacklist, Templates, DLQ. Cada sección: propósito (2-3 líneas), rol con acceso, acción típica con pasos usando datos de seed, qué observar en pantalla.
-- [ ] T031c [US7] Agregar link a `docs/app-tour.md` (URL absoluta al repo GitHub) en el footer de `app/views/home/show.html.erb`. (Bloqueado por US5 — la view no existe aún)
+- [x] T031c [US7] Agregar link a `docs/app-tour.md` (URL absoluta al repo GitHub) en el footer de `app/views/home/show.html.erb`.
 
 ## US5 — Home page pública (P2)
 
-- [ ] T032 [P] [US5] `app/controllers/home_controller.rb` con action `show`, sin auth, sin layout admin.
-- [ ] T033 [P] [US5] `app/views/home/show.html.erb` con hero, flujo numerado 4 pasos, tabla de endpoints públicos, footer con link repo. CTA condicional según `admin_user_signed_in?`.
-- [ ] T034 [US5] Route `root "home#show"` en `config/routes.rb` (reemplaza/agrega). Verificar que no rompe redirect a `/admin/login` post-logout.
-- [ ] T035 [US5] Spec `spec/requests/home_controller_spec.rb` — 200 sin sesión, 200 con sesión admin (CTA distinto), sin redirect, < 100ms.
+- [x] T032 [P] [US5] `app/controllers/home_controller.rb` con action `show`, sin auth, sin layout admin.
+- [x] T033 [P] [US5] `app/views/home/show.html.erb` con hero, flujo numerado 4 pasos, tabla de endpoints públicos, footer con link repo. CTA condicional según `admin_user_signed_in?`.
+- [x] T034 [US5] Route `root "home#show"` en `config/routes.rb` (reemplaza/agrega). Verificar que no rompe redirect a `/admin/login` post-logout.
+- [x] T035 [US5] Spec `spec/requests/home_controller_spec.rb` — 200 sin sesión, 200 con sesión admin (CTA distinto), sin redirect, < 100ms.
 
 ## US6 — Diseño visual consistente (P3)
 
