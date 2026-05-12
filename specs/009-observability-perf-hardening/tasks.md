@@ -9,30 +9,30 @@ Convenciones: `[P]` paralelizable (archivos distintos), `[USx]` user story owner
 
 ## Setup
 
-- [ ] T001 Crear `Dockerfile` (o actualizar si existe) con Ruby 3.4-slim base + apt deps (libpq-dev, build-essential) + bundle install + COPY app + EXPOSE 3000.
-- [ ] T002 Crear/actualizar `docker-compose.yml` con servicios `app` (web :3000), `worker` (cmd `bin/rails worker:run[10,2]`), `db` (postgres:17 con healthcheck), `test` (preservar el existente), `k6` (image `grafana/k6` bajo perfil `load-test`).
-- [ ] T003 Crear `.dockerignore` (excluir `tmp/`, `log/`, `node_modules/`, `.git`).
-- [ ] T004 [P] Crear `config/initializers/metrics_auth.rb` con lectura de ENV `METRICS_BASIC_AUTH_USER`/`METRICS_BASIC_AUTH_PASSWORD` y constante `MetricsAuth::CREDENTIALS_PRESENT`.
-- [ ] T005 [P] Agregar Tailwind CDN script tag a `app/views/layouts/application.html.erb` y a `app/views/layouts/admin.html.erb`. Verificar que ambos cargan sin error.
+- [x] T001 Crear `Dockerfile` (o actualizar si existe) con Ruby 3.4-slim base + apt deps (libpq-dev, build-essential) + bundle install + COPY app + EXPOSE 3000.
+- [x] T002 Crear/actualizar `docker-compose.yml` con servicios `app` (web :3000), `worker` (cmd `bin/rails worker:run[10,2]`), `db` (postgres:17 con healthcheck), `test` (preservar el existente), `k6` (image `grafana/k6` bajo perfil `load-test`).
+- [x] T003 Crear `.dockerignore` (excluir `tmp/`, `log/`, `node_modules/`, `.git`).
+- [x] T004 [P] Crear `config/initializers/metrics_auth.rb` con lectura de ENV `METRICS_BASIC_AUTH_USER`/`METRICS_BASIC_AUTH_PASSWORD` y constante `MetricsAuth::CREDENTIALS_PRESENT`.
+- [x] T005 [P] Agregar Tailwind CDN script tag a `app/views/layouts/application.html.erb` y a `app/views/layouts/admin.html.erb`. Verificar que ambos cargan sin error.
 
 ## Foundational
 
-- [ ] T006 Crear partial `app/views/shared/_flash.html.erb` con `data-flash-container` y clases Tailwind para success/notice/alert.
-- [ ] T007 Crear partial `app/views/shared/_form_errors.html.erb` (renderiza `object.errors.full_messages` con estilo consistente).
-- [ ] T008 Crear partial `app/views/shared/_table.html.erb` (acepta headers + rows blocks; clases base `admin-table`).
-- [ ] T009 Crear partial `app/views/shared/_sidebar.html.erb` con secciones Operación/Reglas/Auditoría, role-aware vía `RoleAuthorizer.allowed?(current_admin_user.role, :section)`. Resalta sección activa con `data-active`.
-- [ ] T010 Crear helper `app/helpers/admin/navigation_helper.rb` con `active_section?(section)` y `nav_link_to(label, path, section:)`.
-- [ ] T011 Spec `spec/helpers/admin/navigation_helper_spec.rb`.
+- [x] T006 Crear partial `app/views/shared/_flash.html.erb` con `data-flash-container` y clases Tailwind para success/notice/alert.
+- [x] T007 Crear partial `app/views/shared/_form_errors.html.erb` (renderiza `object.errors.full_messages` con estilo consistente).
+- [x] T008 Crear partial `app/views/shared/_table.html.erb` (acepta headers + rows blocks; clases base `admin-table`).
+- [x] T009 Crear partial `app/views/shared/_sidebar.html.erb` con secciones Operación/Reglas/Auditoría, role-aware vía `RoleAuthorizer.allowed?(current_admin_user.role, :section)`. Resalta sección activa con `data-active`.
+- [x] T010 Crear helper `app/helpers/admin/navigation_helper.rb` con `active_section?(section)` y `nav_link_to(label, path, section:)`.
+- [x] T011 Spec `spec/helpers/admin/navigation_helper_spec.rb`.
 
 ## US1 — Endpoint /metrics (P1)
 
-- [ ] T012 [P] [US1] `app/central/observability/metrics_collector.rb` — clase con métodos `queue_depth`, `dlq_size`, `events_ingested_24h`, `dispatch_errors_by_class`, `bounce_rate_5m`, `webhook_lag_seconds`. Todas con queries directas a AR.
-- [ ] T013 [P] [US1] Spec `spec/central/observability/metrics_collector_spec.rb` — verifica cada query con factories.
-- [ ] T014 [US1] `app/central/observability/prometheus_formatter.rb` — `format(metrics_hash) → String` Prometheus text exposition.
-- [ ] T015 [US1] Spec `spec/central/observability/prometheus_formatter_spec.rb` — gauges simples, gauges con labels, multi-label.
-- [ ] T016 [US1] `app/controllers/metrics_controller.rb` con `http_basic_authenticate_with` desde `MetricsAuth::CREDENTIALS`, action `show` que llama collector + formatter, set `Cache-Control: public, max-age=5`, rescue `ActiveRecord::ConnectionNotEstablished` → 503.
-- [ ] T017 [US1] Route `get "/metrics" => "metrics#show"` en `config/routes.rb`.
-- [ ] T018 [US1] Spec `spec/requests/metrics_controller_spec.rb` — 200 con auth + formato, 401 sin auth, 503 sin ENV configurada, header cache presente, performance < 100ms con 10k filas.
+- [x] T012 [P] [US1] `app/central/observability/metrics_collector.rb` — clase con métodos `queue_depth`, `dlq_size`, `events_ingested_24h`, `dispatch_errors_by_class`, `bounce_rate_5m`, `webhook_lag_seconds`. Todas con queries directas a AR.
+- [x] T013 [P] [US1] Spec `spec/central/observability/metrics_collector_spec.rb` — verifica cada query con factories.
+- [x] T014 [US1] `app/central/observability/prometheus_formatter.rb` — `format(metrics_hash) → String` Prometheus text exposition.
+- [x] T015 [US1] Spec `spec/central/observability/prometheus_formatter_spec.rb` — gauges simples, gauges con labels, multi-label.
+- [x] T016 [US1] `app/controllers/metrics_controller.rb` con auth Basic runtime via `authenticate_or_request_with_http_basic`, action `show` que llama collector + formatter, set `Cache-Control: public, max-age=5`, rescue `ActiveRecord::ConnectionNotEstablished` → 503.
+- [x] T017 [US1] Route `get "/metrics" => "metrics#show"` en `config/routes.rb`.
+- [x] T018 [US1] Spec `spec/requests/metrics_controller_spec.rb` — 200 con auth + formato, 401 sin auth, 503 sin ENV configurada, header cache presente, performance < 100ms con 10k filas.
 
 ## US2 — Load test 140 rps × 1h (P1)
 
