@@ -20,6 +20,14 @@
       <%= f.text_field :source, value: @filters[:source] %>
     </p>
     <p>
+      <%= f.label :reason, "Motivo (reason)" %>
+      <%= f.text_field :reason, value: @filters[:reason] %>
+    </p>
+    <p>
+      <%= f.label :rule_id, "ID de regla" %>
+      <%= f.text_field :rule_id, value: @filters[:rule_id] %>
+    </p>
+    <p>
       <%= f.label :from, "Desde" %>
       <%= f.datetime_local_field :from, value: @filters[:from] %>
     </p>
@@ -27,7 +35,10 @@
       <%= f.label :to, "Hasta" %>
       <%= f.datetime_local_field :to, value: @filters[:to] %>
     </p>
-    <p><%= f.submit "Buscar" %></p>
+    <p>
+      <%= f.submit "Buscar" %>
+      <%= link_to "Exportar CSV", admin_audits_path(@filters.merge(format: :csv)), style: "margin-left: 1rem;" %>
+    </p>
   </fieldset>
 <% end %>
 
@@ -39,11 +50,13 @@
       <th>created_at</th>
       <th>correlation_id</th>
       <th>recipient</th>
+      <th>tipo</th>
       <th>status</th>
       <th>source</th>
       <th>channel</th>
       <th>reason</th>
       <th>rule_id</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>

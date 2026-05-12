@@ -10,9 +10,12 @@ RSpec.describe "Admin role gates", type: :request do
 
   def request_for(section)
     case section
-    when :dashboard then get admin_dashboard_path
-    when :rules     then get admin_rules_path
-    when :mock_data then post admin_mock_data_path
+    when :dashboard       then get admin_dashboard_path
+    when :rules           then get admin_rules_path
+    when :mock_data       then post admin_mock_data_path
+    when :audits          then get admin_audits_path
+    when :blacklist_read  then get admin_blacklist_index_path
+    when :blacklist_write then post admin_blacklist_index_path, params: { recipient: "x@example.com", scope: "global" }
     end
   end
 
@@ -36,6 +39,9 @@ RSpec.describe "Admin role gates", type: :request do
     include_examples "allows access to", :dashboard
     include_examples "allows access to", :rules
     include_examples "allows access to", :mock_data
+    include_examples "allows access to", :audits
+    include_examples "allows access to", :blacklist_read
+    include_examples "allows access to", :blacklist_write
   end
 
   describe "product role" do
@@ -44,6 +50,9 @@ RSpec.describe "Admin role gates", type: :request do
     include_examples "allows access to", :dashboard
     include_examples "allows access to", :rules
     include_examples "denies access to", :mock_data
+    include_examples "allows access to", :audits
+    include_examples "allows access to", :blacklist_read
+    include_examples "denies access to", :blacklist_write
   end
 
   describe "engineering role" do
@@ -52,6 +61,9 @@ RSpec.describe "Admin role gates", type: :request do
     include_examples "allows access to", :dashboard
     include_examples "denies access to", :rules
     include_examples "denies access to", :mock_data
+    include_examples "allows access to", :audits
+    include_examples "allows access to", :blacklist_read
+    include_examples "denies access to", :blacklist_write
   end
 
   describe "support role" do
@@ -60,6 +72,9 @@ RSpec.describe "Admin role gates", type: :request do
     include_examples "allows access to", :dashboard
     include_examples "denies access to", :rules
     include_examples "denies access to", :mock_data
+    include_examples "allows access to", :audits
+    include_examples "allows access to", :blacklist_read
+    include_examples "allows access to", :blacklist_write
   end
 
   describe "unauthenticated user" do

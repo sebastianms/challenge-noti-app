@@ -1,0 +1,41 @@
+<h1>Timeline — <code><%= params[:correlation_id] %></code></h1>
+
+<%= link_to "← Volver a auditoría", admin_audits_path %>
+
+<% if @timeline.empty? %>
+  <p>No se encontraron eventos para este correlation_id.</p>
+<% else %>
+  <% first = @timeline.first %>
+  <section style="margin: 1rem 0;">
+    <strong>Tipo:</strong> <%= first.notification_type || "—" %> &nbsp;
+    <strong>Destinatario:</strong> <%= first.recipient_canonical || "—" %>
+  </section>
+
+  <% if @payload.present? %>
+    <details>
+      <summary>Payload del evento</summary>
+      <pre style="background:#f5f5f5;padding:0.5rem;"><%= JSON.pretty_generate(@payload) rescue @payload.inspect %></pre>
+    </details>
+  <% end %>
+
+  <% if @rule %>
+    <p>
+      Regla aplicada: <%= link_to "##{@rule.id} — #{@rule.notification_type}", edit_admin_rule_path(@rule) %>
+      (prioridad: <%= @rule.priority %>, max/día: <%= @rule.max_per_day || "—" %>)
+    </p>
+  <% end %>
+
+  <ol style="list-style:none;padding:0;border-left:3px solid #ccc;margin:1rem 0;">
+    <% @timeline.each do |event| %>
+      <% reason = event.metadata&.dig("reason") %>
+      <li style="padding:0.5rem 1rem;margin-bottom:0.25rem;">
+        <strong><%= event.created_at.strftime("%Y-%m-%d %H:%M:%S.%3N") %></strong>
+        — <span style="font-weight:bold;"><%= event.status %></span>
+        · <%= event.source %> · <%= event.channel %>
+        <% if reason %>
+          · <em style="color:#c00;">motivo: <%= reason %></em>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+<% end %>

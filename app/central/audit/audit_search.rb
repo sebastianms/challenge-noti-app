@@ -8,13 +8,16 @@ class AuditSearch
     def has_next? = page * per_page < total
   end
 
-  def initialize(correlation_id: nil, recipient: nil, status: nil, from: nil, to: nil, source: nil, page: 1, per_page: DEFAULT_PER_PAGE)
+  def initialize(correlation_id: nil, recipient: nil, status: nil, from: nil, to: nil, source: nil,
+                 reason: nil, rule_id: nil, page: 1, per_page: DEFAULT_PER_PAGE)
     @correlation_id = correlation_id
     @recipient      = recipient
     @status         = status
     @from           = from
     @to             = to
     @source         = source
+    @reason         = reason
+    @rule_id        = rule_id&.to_i.presence
     @page           = [ page.to_i, 1 ].max
     @per_page       = [ [ per_page.to_i, 1 ].max, MAX_PER_PAGE ].min
   end
@@ -41,6 +44,8 @@ class AuditSearch
     scope = scope.where(source: @source)                 if @source.present?
     scope = scope.where("created_at >= ?", @from)        if @from.present?
     scope = scope.where("created_at < ?",  @to)          if @to.present?
+    scope = scope.where("metadata->>'reason' = ?", @reason)           if @reason.present?
+    scope = scope.where("(metadata->>'rule_id')::int = ?", @rule_id)  if @rule_id.present?
 
     total = scope.count
     items = scope.order(created_at: :desc).limit(@per_page).offset((@page - 1) * @per_page).to_a

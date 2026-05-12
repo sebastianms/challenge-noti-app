@@ -23,7 +23,10 @@
       <%= f.label :source %>
       <%= f.select :source, [ "", "manual", "admin_ui", "hard_bounce", "dropped", "spamreport" ], { selected: @filters[:source] } %>
     </p>
-    <p><%= f.submit "Buscar" %></p>
+    <p>
+      <%= f.submit "Buscar" %>
+      <%= link_to "Exportar CSV", admin_blacklist_index_path(@filters.merge(format: :csv)), style: "margin-left: 1rem;" %>
+    </p>
   </fieldset>
 <% end %>
 

@@ -1,18 +1,29 @@
 # frozen_string_literal: true
 
 module Admin
-  class BlacklistController < ApplicationController
+  class BlacklistController < BaseController
     PER_PAGE = 50
 
-    http_basic_authenticate_with(
-      name:     ENV.fetch("AUDIT_BASIC_AUTH_USER", "admin"),
-      password: ENV.fetch("AUDIT_BASIC_AUTH_PASSWORD", "admin")
-    )
+    WRITE_ACTIONS = %i[create destroy].freeze
+
+    def controller_section
+      WRITE_ACTIONS.include?(action_name.to_sym) ? :blacklist_write : :blacklist_read
+    end
 
     def index
       @filters = filter_params
       @items   = build_query(@filters).limit(PER_PAGE)
       @total   = build_query(@filters).count
+
+      respond_to do |format|
+        format.html
+        format.csv do
+          all_items = build_query(@filters).to_a
+          send_data Admin::BlacklistCsv.generate(all_items),
+                    filename: "blacklist-#{Time.zone.now.strftime('%Y%m%d%H%M')}.csv",
+                    type: "text/csv; charset=utf-8"
+        end
+      end
     end
 
     def create
@@ -37,7 +48,6 @@ module Admin
 
     def destroy
       entry = NotificationBlacklist.find(params[:id])
-      removed_by = request.env["HTTP_AUTHORIZATION"]&.then { decode_basic_user(_1) } || "console"
 
       ActiveRecord::Base.transaction do
         NotificationAudit.create!(
@@ -48,7 +58,7 @@ module Admin
           notification_type:   "_blacklist_removed_",
           recipient_canonical: entry.recipient_canonical,
           metadata:            { blacklist_id: entry.id, scope: entry.scope, target: entry.target,
-                                 removed_by: removed_by, reason: params[:reason].to_s }
+                                 removed_by: current_admin_user.email, reason: params[:reason].to_s }
         )
         entry.destroy!
       end
@@ -77,16 +87,6 @@ module Admin
       RecipientNormalizer.normalize(raw)[:canonical]
     # :nocov:
     rescue ArgumentError
-      nil
-      # :nocov:
-    end
-
-    def decode_basic_user(header)
-      return nil unless header&.start_with?("Basic ")
-
-      Base64.decode64(header.split(" ", 2).last).split(":", 2).first
-    # :nocov:
-    rescue StandardError
       nil
       # :nocov:
     end

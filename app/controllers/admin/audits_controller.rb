@@ -1,11 +1,8 @@
 # frozen_string_literal: true
 
 module Admin
-  class AuditsController < ApplicationController
-    http_basic_authenticate_with(
-      name:     ENV.fetch("AUDIT_BASIC_AUTH_USER", "admin"),
-      password: ENV.fetch("AUDIT_BASIC_AUTH_PASSWORD", "admin")
-    )
+  class AuditsController < BaseController
+    def controller_section = :audits
 
     def index
       @filters = filter_params
@@ -24,6 +21,23 @@ module Admin
         @per_page = @search.per_page
         @has_next = @search.has_next?
       end
+
+      respond_to do |format|
+        format.html
+        format.csv do
+          send_data Admin::AuditCsv.generate(@items),
+                    filename: "audits-#{Time.zone.now.strftime('%Y%m%d%H%M')}.csv",
+                    type: "text/csv; charset=utf-8"
+        end
+      end
+    end
+
+    def show
+      timeline = AuditSearch.new(correlation_id: params[:correlation_id]).call
+      @timeline = Array(timeline).sort_by(&:created_at)
+      @payload  = @timeline.first&.payload
+      rule_id   = @timeline.map { |a| a.metadata&.dig("rule_id") }.compact.first
+      @rule     = rule_id ? NotificationRule.find_by(id: rule_id) : nil
     end
 
     private
@@ -36,6 +50,8 @@ module Admin
         source:         params[:source].presence,
         from:           params[:from].presence,
         to:             params[:to].presence,
+        reason:         params[:reason].presence,
+        rule_id:        params[:rule_id].presence,
         page:           (params[:page] || 1).to_i,
         per_page:       (params[:per_page] || AuditSearch::DEFAULT_PER_PAGE).to_i
       }.compact

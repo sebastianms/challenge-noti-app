@@ -83,28 +83,26 @@ RSpec.describe "Blacklist pipeline", type: :request do
   end
 
   describe "US3 — alta y remoción via UI deja audit trail" do
-    let(:headers) do
-      { "HTTP_AUTHORIZATION" => ActionController::HttpAuthentication::Basic.encode_credentials("admin", "admin") }
-    end
+    let(:admin) { create(:admin_user, :admin) }
 
     it "create via POST → listed en index → destroy via DELETE → audit blacklist_removed visible" do
+      sign_in admin
+
       post "/admin/blacklist",
-           params:  { recipient: "ui@example.com", scope: "global", reason: "from form" },
-           headers: headers
+           params: { recipient: "ui@example.com", scope: "global", reason: "from form" }
       expect(response).to have_http_status(:see_other)
 
-      get "/admin/blacklist", headers: headers
+      get "/admin/blacklist"
       expect(response.body).to include("ui@example.com")
 
       entry = NotificationBlacklist.find_by(recipient_canonical: "ui@example.com")
       delete "/admin/blacklist/#{entry.id}",
-             params:  { reason: "reactivated" },
-             headers: headers
+             params: { reason: "reactivated" }
       expect(response).to have_http_status(:see_other)
       expect(NotificationBlacklist.find_by(id: entry.id)).to be_nil
 
       audit = NotificationAudit.find_by(notification_type: "_blacklist_removed_")
-      expect(audit.metadata["removed_by"]).to eq("admin")
+      expect(audit.metadata["removed_by"]).to eq(admin.email)
       expect(audit.metadata["reason"]).to eq("reactivated")
     end
   end

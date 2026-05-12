@@ -21,7 +21,7 @@ Rails.application.routes.draw do
       member { get :history }
     end
     resource  :mock_data, only: [ :create ]
-    resources :audits,    only: [ :index ]
+    resources :audits,    only: [ :index, :show ], param: :correlation_id
     resources :blacklist, only: [ :index, :create, :destroy ]
   end
 
