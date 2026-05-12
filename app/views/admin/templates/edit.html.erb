@@ -1,0 +1,29 @@
+<h1>Editar template: <%= @template.notification_type %></h1>
+
+<%= render "form", template: @template %>
+
+<hr>
+<h3>Preview en vivo</h3>
+<p>Pegá un JSON de contexto de ejemplo (ej: <code>{"name":"Ana"}</code>) y enviá para ver cómo quedaría el copy.</p>
+
+<%= form_with url: preview_admin_template_path(@template), method: :post, local: true do |f| %>
+  <p>
+    <%= label_tag :title_preview, "Title" %>
+    <%= text_area_tag :title, @template.title, rows: 2, cols: 80 %>
+  </p>
+  <p>
+    <%= label_tag :body_preview, "Body" %>
+    <%= text_area_tag :body, @template.body, rows: 4, cols: 80 %>
+  </p>
+  <p>
+    <%= label_tag :digest_template_preview, "Digest template" %>
+    <%= text_area_tag :digest_template, @template.digest_template, rows: 2, cols: 80 %>
+  </p>
+  <p>
+    <%= label_tag :context_json, "Contexto JSON (para preview)" %>
+    <%= text_field_tag :context_json, "{}", size: 60 %>
+  </p>
+  <%= submit_tag "Ver preview" %>
+<% end %>
+
+<%= link_to "Volver", admin_templates_path %>

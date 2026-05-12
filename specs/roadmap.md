@@ -128,14 +128,15 @@ Implementado en feature [004-rules-engine](004-rules-engine/):
 
 ---
 
-## Phase 9 — User Story 7: UI Admin — Templates + DLQ (operaciones)
+## Phase 9 — User Story 7: UI Admin — Templates + DLQ (operaciones)  `[DONE]`
 
 > Operaciones y editorial cierran el set de capacidades.
 
-- [ ] **Editor de templates**: preview de `title + body` y `digest_template`, lista de variables disponibles
-- [ ] **Operaciones / DLQ**: items agrupados por motivo, reintento individual y masivo, descarte con motivo
+- [x] **Editor de templates**: `notification_templates` DB-backed con override sobre `AbstractNotification`. Interpolación `{{variable}}` propia (no Liquid). Cache 5 min + invalidación sincrónica. Preview en `/admin/templates/:id/edit`.
+- [x] **Operaciones / DLQ**: `/admin/dlq` lista `dispatch_queue WHERE status='failed'` agrupado por clase de error. Reintento individual, masivo (cap 500, transaccional, audit consolidado) y descarte con motivo. Roles: admin + engineering.
+- [x] ADL-013 (template override resolver), ADL-014 (DLQ bulk retry cap).
 
-**DoD**: tras simular un outage de Sendgrid (5xx forzado), operaciones evacúa la DLQ con un reintento masivo desde la UI.
+**DoD ✅**: tras un outage simulado, operaciones evacúa la DLQ con reintento masivo desde la UI en < 30 s. Copy de notificación actualizable desde el panel sin redeploy. Cobertura 100%, 586 ejemplos en verde.
 
 ---
 

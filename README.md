@@ -277,7 +277,24 @@ Ver `.design-logs/ADL-010-blacklist-pre-rules-evaluation.md` para el rationale c
 
 ## Panel admin (UI)
 
-El panel admin completo está disponible desde Phase 8. Incluye dashboard de métricas, gestión de reglas, auditoría de notificaciones, gestión de blacklist y generación de datos mock. Toda autenticación usa Devise — no existe ningún endpoint bajo `/admin/*` con HTTP Basic.
+El panel admin completo está disponible desde Phase 9. Incluye dashboard de métricas, gestión de reglas, editor de templates, auditoría de notificaciones, gestión de blacklist, generación de datos mock y gestión de DLQ. Toda autenticación usa Devise — no existe ningún endpoint bajo `/admin/*` con HTTP Basic.
+
+### Editor de templates
+
+`/admin/templates` — permite crear overrides de `title`, `body` y `digest_template` por tipo de notificación. El sistema consulta la DB antes de caer al copy definido en el archivo Ruby.
+
+- **Interpolación**: `{{variable}}` se reemplaza con el valor del contexto del llamante. Variables faltantes resuelven a string vacío con advertencia en el preview.
+- **Preview**: form en `/admin/templates/:id/edit` → POST a `preview` renderiza el resultado interpolado con el contexto de ejemplo que se ingrese.
+- **Cache**: TTL 5 min con invalidación sincrónica al guardar o borrar (igual que reglas). Cambios visibles en el próximo envío sin redeploy.
+- **Sin override**: si no existe entrada en DB para el tipo, se usa el copy del archivo Ruby (compatibilidad total con código existente).
+
+### Gestión de DLQ
+
+`/admin/dlq` — lista `dispatch_queue` con `status=failed` agrupado por clase de error. Acciones disponibles (solo admin y engineering):
+
+- **Reintentar individual**: mueve el job a `pending`, resetea `attempts=0`, genera audit `_dlq_retried_` con `retried_by=email`.
+- **Reintentar todos (bulk)**: filtra por motivo, procesa máximo 500 jobs por click en una transacción, genera audit consolidado `_dlq_bulk_retried_` con `count` y `reason_filter`.
+- **Descartar**: marca `status=discarded`, genera audit `_dlq_discarded_` con `discarded_by=email` y motivo.
 
 ### Crear usuarios seed
 
@@ -318,6 +335,14 @@ Tras autenticarse, el usuario es redirigido a `/admin/dashboard`. El sistema blo
 | `/admin/blacklist` | GET | Lista de blacklist (filtros + CSV) | todos |
 | `/admin/blacklist` | POST | Alta manual en blacklist | admin, support |
 | `/admin/blacklist/:id` | DELETE | Baja con audit trail | admin, support |
+| `/admin/templates` | GET | Lista de overrides de templates | admin, product |
+| `/admin/templates/new` | GET | Nuevo override | admin, product |
+| `/admin/templates/:id/edit` | GET | Editar override + preview | admin, product |
+| `/admin/templates/:id/preview` | POST | Preview interpolado (sin persistir) | admin, product |
+| `/admin/dlq` | GET | DLQ agrupada por motivo | admin, engineering |
+| `/admin/dlq/:id/retry` | POST | Reintentar job individual | admin, engineering |
+| `/admin/dlq/bulk_retry` | POST | Reintentar masivo por motivo (cap 500) | admin, engineering |
+| `/admin/dlq/:id/discard` | POST | Descartar job con motivo | admin, engineering |
 
 ### Filtros disponibles en `/admin/audits`
 
@@ -339,6 +364,8 @@ Agregar `?format=csv` descarga las filas filtradas en CSV.
 | audits | ✓ | ✓ | ✓ | ✓ |
 | blacklist (lectura) | ✓ | ✓ | ✓ | ✓ |
 | blacklist (alta/baja) | ✓ | ✗ | ✗ | ✓ |
+| templates | ✓ | ✓ | ✗ | ✗ |
+| dlq | ✓ | ✗ | ✓ | ✗ |
 
 ### Feature flag Mock Data
 

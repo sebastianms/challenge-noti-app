@@ -40,9 +40,18 @@ class AbstractNotification
       EventBuilder.build(
         notification_class: self,
         recipient: recipient,
-        context: context,
+        context: resolved_context(context),
         priority: priority
       )
+    end
+
+    private
+
+    def resolved_context(context)
+      type = resolved_notification_type
+      subject = Templates::TemplateResolver.title_for(type: type, ctx: context) || title(context)
+      resolved_body = Templates::TemplateResolver.body_for(type: type, ctx: context) || body(context)
+      context.merge(subject: subject, body: resolved_body)
     end
   end
 end

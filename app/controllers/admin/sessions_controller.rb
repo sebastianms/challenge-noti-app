@@ -10,7 +10,7 @@ module Admin
       admin_dashboard_path
     end
 
-    def respond_to_on_destroy
+    def respond_to_on_destroy(**_opts)
       redirect_to new_admin_user_session_path, notice: "Sesión cerrada."
     end
   end

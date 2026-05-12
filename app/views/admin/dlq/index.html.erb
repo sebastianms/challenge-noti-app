@@ -1,0 +1,76 @@
+<h1>Dead Letter Queue</h1>
+
+<%= form_with url: admin_dlq_index_path, method: :get, local: true do |f| %>
+  <fieldset>
+    <legend>Filtrar por motivo</legend>
+    <p>
+      <%= f.label :reason, "Clase de error (ej: Net::OpenTimeout)" %>
+      <%= f.text_field :reason, value: @reason_filter, size: 50 %>
+      <%= f.submit "Filtrar" %>
+      <%= link_to "Limpiar", admin_dlq_index_path, style: "margin-left: 0.5rem;" %>
+    </p>
+  </fieldset>
+<% end %>
+
+<hr>
+
+<%= form_with url: bulk_retry_admin_dlq_index_path, method: :post, local: true do |f| %>
+  <p>
+    <%= f.hidden_field :reason, value: @reason_filter %>
+    <%= f.submit "Reintentar todos#{@reason_filter.present? ? " '#{@reason_filter}'" : ''} (cap 500)",
+                 data: { confirm: "¿Reintentar todos los jobs del filtro actual? Max 500 por operación." },
+                 disabled: @groups.empty? %>
+  </p>
+<% end %>
+
+<% if @groups.empty? %>
+  <p>No hay jobs en la DLQ<%= " para el filtro '#{@reason_filter}'" if @reason_filter.present? %>.</p>
+<% else %>
+  <% @groups.each do |group| %>
+    <details>
+      <summary>
+        <strong><%= group[:reason_class] %></strong>
+        — <%= group[:count] %> job<%= "s" if group[:count] != 1 %>
+      </summary>
+
+      <table border="1" style="margin: 0.5rem 1rem;">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Event ID</th>
+            <th>Intentos</th>
+            <th>Motivo</th>
+            <th>Actualizado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% group[:items].each do |job| %>
+            <tr>
+              <td><%= job.id %></td>
+              <td><%= job.event_id %></td>
+              <td><%= job.attempts %></td>
+              <td><%= truncate(job.failed_reason.to_s, length: 80) %></td>
+              <td><%= job.updated_at.strftime("%Y-%m-%d %H:%M") %></td>
+              <td>
+                <%= button_to "Reintentar", retry_admin_dlq_path(job), method: :post,
+                      data: { confirm: "¿Reencolar job ##{job.id}?" } %>
+
+                <%= form_with url: discard_admin_dlq_path(job), method: :post, local: true, style: "display:inline;" do |f| %>
+                  <%= f.text_field :reason, placeholder: "Motivo de descarte", size: 30 %>
+                  <%= f.submit "Descartar", data: { confirm: "¿Descartar job ##{job.id}? No se puede revertir." } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <% if group[:count] > group[:items].size %>
+        <p style="margin-left: 1rem; color: gray;">
+          Mostrando <%= group[:items].size %> de <%= group[:count] %>. Filtrá por motivo para ver más.
+        </p>
+      <% end %>
+    </details>
+  <% end %>
+<% end %>

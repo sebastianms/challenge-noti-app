@@ -22,7 +22,14 @@ Rails.application.routes.draw do
     end
     resource  :mock_data, only: [ :create ]
     resources :audits,    only: [ :index, :show ], param: :correlation_id
-    resources :blacklist, only: [ :index, :create, :destroy ]
+    resources :blacklist,  only: [ :index, :create, :destroy ]
+    resources :templates,  only: [ :index, :new, :create, :edit, :update, :destroy ] do
+      member { post :preview }
+    end
+    resources :dlq, only: [ :index ] do
+      member     { post :retry; post :discard }
+      collection { post :bulk_retry }
+    end
   end
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)

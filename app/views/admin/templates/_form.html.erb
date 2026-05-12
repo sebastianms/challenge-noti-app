@@ -1,0 +1,33 @@
+<%= form_with model: template,
+               url: template.persisted? ? admin_template_path(template) : admin_templates_path,
+               method: template.persisted? ? :patch : :post,
+               local: true do |f| %>
+  <% if template.errors.any? %>
+    <div style="color: red;">
+      <ul><% template.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %></ul>
+    </div>
+  <% end %>
+
+  <p>
+    <%= f.label :notification_type, "Tipo (ej: birthday, mfa_alert)" %>
+    <%= f.text_field :notification_type %>
+  </p>
+  <p>
+    <%= f.label :title, "Title (usa {{variable}} para interpolar)" %>
+    <%= f.text_area :title, rows: 2, cols: 80 %>
+  </p>
+  <p>
+    <%= f.label :body, "Body" %>
+    <%= f.text_area :body, rows: 4, cols: 80 %>
+  </p>
+  <p>
+    <%= f.label :digest_template, "Digest template (opcional)" %>
+    <%= f.text_area :digest_template, rows: 3, cols: 80 %>
+  </p>
+  <p>
+    <strong>Variables disponibles</strong>: todas las claves del contexto pasado al <code>.send(..., context: {...})</code>.
+    Ejemplo: si el tipo recibe <code>context: { name: "Ana" }</code>, usá <code>{{name}}</code>.
+  </p>
+
+  <%= f.submit %>
+<% end %>

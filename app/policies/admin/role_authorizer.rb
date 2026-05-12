@@ -3,9 +3,9 @@
 module Admin
   class RoleAuthorizer
     PERMISSIONS = {
-      "admin"       => %i[dashboard rules mock_data audits blacklist_read blacklist_write].freeze,
-      "product"     => %i[dashboard rules audits blacklist_read].freeze,
-      "engineering" => %i[dashboard audits blacklist_read].freeze,
+      "admin"       => %i[dashboard rules mock_data audits blacklist_read blacklist_write templates dlq].freeze,
+      "product"     => %i[dashboard rules audits blacklist_read templates].freeze,
+      "engineering" => %i[dashboard audits blacklist_read dlq].freeze,
       "support"     => %i[dashboard audits blacklist_read blacklist_write].freeze
     }.freeze
 

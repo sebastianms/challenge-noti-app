@@ -1,0 +1,35 @@
+<h1>Templates de notificaciones</h1>
+
+<%= link_to "Nuevo override", new_admin_template_path %>
+
+<% if @templates.empty? %>
+  <p>No hay overrides definidos. Los tipos usan el copy de sus archivos Ruby.</p>
+<% else %>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Tipo</th>
+        <th>Locale</th>
+        <th>Title</th>
+        <th>Actualizado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @templates.each do |tmpl| %>
+        <tr>
+          <td><%= tmpl.notification_type %></td>
+          <td><%= tmpl.locale %></td>
+          <td><%= truncate(tmpl.title, length: 60) %></td>
+          <td><%= tmpl.updated_at.strftime("%Y-%m-%d %H:%M") %></td>
+          <td>
+            <%= link_to "Editar", edit_admin_template_path(tmpl) %>
+            <%= " | " %>
+            <%= button_to "Eliminar", admin_template_path(tmpl), method: :delete,
+                  data: { confirm: "¿Eliminar override? El tipo volverá al copy de Ruby." } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

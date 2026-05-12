@@ -1,0 +1,19 @@
+<% if @preview[:missing].any? %>
+  <div style="color: orange;">
+    <strong>Advertencia:</strong> las siguientes variables no resolvieron:
+    <code><%= @preview[:missing].join(", ") %></code>
+  </div>
+<% end %>
+
+<dl>
+  <dt><strong>Title:</strong></dt>
+  <dd><%= @preview[:title] %></dd>
+
+  <dt><strong>Body:</strong></dt>
+  <dd><pre><%= @preview[:body] %></pre></dd>
+
+  <% if @preview[:digest_template].present? %>
+    <dt><strong>Digest template:</strong></dt>
+    <dd><pre><%= @preview[:digest_template] %></pre></dd>
+  <% end %>
+</dl>

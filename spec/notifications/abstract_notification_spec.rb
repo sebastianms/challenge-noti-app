@@ -43,6 +43,36 @@ RSpec.describe AbstractNotification do
     end
   end
 
+  describe ".send with template override" do
+    before { Rails.cache.clear }
+
+    it "uses DB override subject/body when override exists" do
+      create(:notification_template,
+             notification_type: "birthday",
+             title: "Hoy es tu día {{name}} 🎉",
+             body: "Te deseamos lo mejor.")
+
+      allow(EventBuilder).to receive(:build).and_call_original
+      BirthdayNotification.send("test@example.com", context: { name: "Juan" })
+
+      expect(EventBuilder).to have_received(:build) do |args|
+        ctx = args[:context]
+        expect(ctx[:subject]).to eq("Hoy es tu día Juan 🎉")
+        expect(ctx[:body]).to eq("Te deseamos lo mejor.")
+      end
+    end
+
+    it "falls back to Ruby class methods when no override" do
+      allow(EventBuilder).to receive(:build).and_call_original
+      BirthdayNotification.send("test@example.com", context: { name: "Ana" })
+
+      expect(EventBuilder).to have_received(:build) do |args|
+        ctx = args[:context]
+        expect(ctx[:subject]).to eq("¡Feliz cumpleaños, Ana!")
+      end
+    end
+  end
+
   describe ".resolved_idempotency_window" do
     context "cuando se declara idempotency_window" do
       it "retorna la duración declarada" do

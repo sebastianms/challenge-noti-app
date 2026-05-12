@@ -8,7 +8,7 @@ class DispatchQueue < ApplicationRecord
 
   validates :event_id,        presence: true
   validates :priority,        inclusion: { in: %w[critical standard bulk] }
-  validates :status,          inclusion: { in: %w[pending in_flight done failed] }
+  validates :status,          inclusion: { in: %w[pending in_flight done failed discarded] }
   validates :attempts,        numericality: { greater_than_or_equal_to: 0 }
   validates :next_attempt_at, presence: true
 

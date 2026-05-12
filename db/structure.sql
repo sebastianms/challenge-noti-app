@@ -36,7 +36,7 @@ CREATE TABLE public.admin_users (
     locked_at timestamp(6) without time zone,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    CONSTRAINT admin_users_role_chk CHECK (((role)::text = ANY ((ARRAY['admin'::character varying, 'product'::character varying, 'support'::character varying, 'engineering'::character varying])::text[])))
+    CONSTRAINT admin_users_role_chk CHECK (((role)::text = ANY (ARRAY[('admin'::character varying)::text, ('product'::character varying)::text, ('support'::character varying)::text, ('engineering'::character varying)::text])))
 );
 
 
@@ -87,7 +87,7 @@ CREATE TABLE public.dispatch_queue (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT dispatch_queue_priority_check CHECK ((priority = ANY (ARRAY['critical'::text, 'standard'::text, 'bulk'::text]))),
-    CONSTRAINT dispatch_queue_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'in_flight'::text, 'done'::text, 'failed'::text])))
+    CONSTRAINT dispatch_queue_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'in_flight'::text, 'done'::text, 'failed'::text, 'discarded'::text])))
 );
 
 
@@ -184,9 +184,9 @@ CREATE TABLE public.notification_blacklist (
     source character varying(32) NOT NULL,
     reason text,
     created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
-    CONSTRAINT blacklist_scope_target_chk CHECK (((((scope)::text = 'global'::text) AND (target IS NULL)) OR (((scope)::text = ANY ((ARRAY['type'::character varying, 'channel'::character varying])::text[])) AND (target IS NOT NULL)))),
-    CONSTRAINT blacklist_scope_values_chk CHECK (((scope)::text = ANY ((ARRAY['global'::character varying, 'type'::character varying, 'channel'::character varying])::text[]))),
-    CONSTRAINT blacklist_source_values_chk CHECK (((source)::text = ANY ((ARRAY['manual'::character varying, 'admin_ui'::character varying, 'hard_bounce'::character varying, 'dropped'::character varying, 'spamreport'::character varying])::text[])))
+    CONSTRAINT blacklist_scope_target_chk CHECK (((((scope)::text = 'global'::text) AND (target IS NULL)) OR (((scope)::text = ANY (ARRAY[('type'::character varying)::text, ('channel'::character varying)::text])) AND (target IS NOT NULL)))),
+    CONSTRAINT blacklist_scope_values_chk CHECK (((scope)::text = ANY (ARRAY[('global'::character varying)::text, ('type'::character varying)::text, ('channel'::character varying)::text]))),
+    CONSTRAINT blacklist_source_values_chk CHECK (((source)::text = ANY (ARRAY[('manual'::character varying)::text, ('admin_ui'::character varying)::text, ('hard_bounce'::character varying)::text, ('dropped'::character varying)::text, ('spamreport'::character varying)::text])))
 );
 
 
@@ -313,6 +313,42 @@ ALTER SEQUENCE public.notification_rules_id_seq OWNED BY public.notification_rul
 
 
 --
+-- Name: notification_templates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_templates (
+    id bigint NOT NULL,
+    notification_type text NOT NULL,
+    locale text DEFAULT 'es'::text NOT NULL,
+    title text NOT NULL,
+    body text NOT NULL,
+    digest_template text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT notification_templates_type_format_chk CHECK ((notification_type ~ '^[a-z_]+$'::text))
+);
+
+
+--
+-- Name: notification_templates_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notification_templates_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_templates_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notification_templates_id_seq OWNED BY public.notification_templates.id;
+
+
+--
 -- Name: pending_digests; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -364,7 +400,7 @@ CREATE TABLE public.rule_changes (
     before jsonb,
     after jsonb,
     changed_at timestamp(6) without time zone DEFAULT clock_timestamp() NOT NULL,
-    CONSTRAINT rule_changes_action_chk CHECK (((action)::text = ANY ((ARRAY['created'::character varying, 'updated'::character varying, 'deleted'::character varying])::text[])))
+    CONSTRAINT rule_changes_action_chk CHECK (((action)::text = ANY (ARRAY[('created'::character varying)::text, ('updated'::character varying)::text, ('deleted'::character varying)::text])))
 );
 
 
@@ -489,6 +525,13 @@ ALTER TABLE ONLY public.notification_events ALTER COLUMN id SET DEFAULT nextval(
 --
 
 ALTER TABLE ONLY public.notification_rules ALTER COLUMN id SET DEFAULT nextval('public.notification_rules_id_seq'::regclass);
+
+
+--
+-- Name: notification_templates id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_templates ALTER COLUMN id SET DEFAULT nextval('public.notification_templates_id_seq'::regclass);
 
 
 --
@@ -625,6 +668,14 @@ ALTER TABLE ONLY public.notification_rules
 
 
 --
+-- Name: notification_templates notification_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_templates
+    ADD CONSTRAINT notification_templates_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: pending_digests pending_digests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -710,6 +761,13 @@ CREATE INDEX idx_notification_events_recipient ON ONLY public.notification_event
 --
 
 CREATE INDEX idx_notification_events_status_created_at ON ONLY public.notification_events USING btree (status, created_at);
+
+
+--
+-- Name: idx_notification_templates_type_locale; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_notification_templates_type_locale ON public.notification_templates USING btree (notification_type, locale);
 
 
 --
@@ -1029,6 +1087,8 @@ ALTER TABLE ONLY public.rule_changes
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260513000002'),
+('20260513000001'),
 ('20260512170000'),
 ('20260512000003'),
 ('20260512000002'),
