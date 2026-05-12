@@ -45,9 +45,9 @@ Convenciones: `[P]` paralelizable (archivos distintos), `[USx]` user story owner
 
 ## US3 — CI gates Brakeman + bundle-audit (P2)
 
-- [ ] T025 [US3] Modificar `.github/workflows/ci.yml`: step `brakeman` con `bundle exec brakeman --no-pager --confidence-level 2 --exit-on-warn`. Step `bundle-audit` con `bundle exec bundle-audit check --update`. Ambos sin `continue-on-error`.
-- [ ] T026 [P] [US3] Generar `config/brakeman.ignore` inicial (vacío o con findings actuales si los hay) con `bundle exec brakeman -I` interactivo. Commitear.
-- [ ] T027 [US3] Sección en README explicando: cómo correr Brakeman local (`docker compose exec app bundle exec brakeman`), cómo aceptar un falso positivo (editar `config/brakeman.ignore` con note + fingerprint).
+- [x] T025 [US3] Modificar `.github/workflows/ci.yml`: step `brakeman` con `bundle exec brakeman --no-pager --confidence-level 2 --exit-on-warn`. Step `bundle-audit` con `bundle exec bundle-audit check --update`. Ambos sin `continue-on-error`.
+- [x] T026 [P] [US3] Generar `config/brakeman.ignore` inicial (vacío o con findings actuales si los hay) con `bundle exec brakeman -I` interactivo. Commitear.
+- [x] T027 [US3] Sección en README explicando: cómo correr Brakeman local (`docker compose exec app bundle exec brakeman`), cómo aceptar un falso positivo (editar `config/brakeman.ignore` con note + fingerprint).
 
 ## US4 — Docs setup Docker + crear notif + runbook (P2)
 

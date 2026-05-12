@@ -10,7 +10,7 @@ FIXTURES_PATH    = File.expand_path("../fixtures/load_test", __dir__)
 RSpec.describe "bin/load_report" do
   def run(fixture:, output: nil)
     input = File.join(FIXTURES_PATH, fixture)
-    args  = output ? [input, output] : [input]
+    args  = output ? [ input, output ] : [ input ]
     stdout = `ruby #{LOAD_REPORT_PATH} #{args.map { |a| "'#{a}'" }.join(" ")} 2>&1`
     { stdout: stdout, exit_code: $?.exitstatus }
   end
@@ -70,7 +70,7 @@ RSpec.describe "bin/load_report" do
 
   describe "file output mode" do
     it "writes report to output file" do
-      Tempfile.create(["report", ".md"]) do |f|
+      Tempfile.create([ "report", ".md" ]) do |f|
         run(fixture: "k6_pass.json", output: f.path)
         content = File.read(f.path)
         expect(content).to include("PASS")

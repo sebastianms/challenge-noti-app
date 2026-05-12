@@ -14,6 +14,6 @@ jobs:
         with:
           bundler-cache: true
       - name: Brakeman
-        run: bin/brakeman --no-pager
+        run: bundle exec brakeman --no-pager --confidence-level 2 --exit-on-warn --ignore-config config/brakeman.ignore
       - name: Bundler Audit
-        run: bin/bundler-audit
+        run: bundle exec bundle-audit check --update

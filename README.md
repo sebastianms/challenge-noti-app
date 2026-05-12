@@ -101,6 +101,38 @@ bundle exec bundler-audit                # auditoría de dependencias
 | `app` | `docker compose up app` | Rails dev server en `localhost:3000` |
 | `test` | `docker compose run --rm test` | Corre `bundle exec rspec` y termina |
 
+## Seguridad estática
+
+El CI corre dos gates de seguridad en cada push a `main` y en cada PR (ver `.github/workflows/security.yml`):
+
+| Herramienta | Qué detecta | Comando local |
+|-------------|-------------|---------------|
+| **Brakeman** | Vulnerabilidades estáticas en código Rails (SQL injection, XSS, CSRF…) | `docker compose exec app bundle exec brakeman --no-pager --confidence-level 2 --exit-on-warn` |
+| **bundler-audit** | Dependencias con CVEs conocidos | `docker compose exec app bundle exec bundle-audit check --update` |
+
+Ambos gates bloquean el merge si encuentran un problema (sin `continue-on-error`).
+
+### Aceptar un falso positivo de Brakeman
+
+1. Ejecuta Brakeman con `--format json` para obtener el fingerprint del warning:
+   ```bash
+   docker compose exec app bundle exec brakeman --no-pager --format json 2>/dev/null | jq '.warnings[] | {fingerprint, warning_type, message}'
+   ```
+2. Agrega una entrada en `config/brakeman.ignore`:
+   ```json
+   {
+     "ignored_warnings": [
+       {
+         "fingerprint": "<fingerprint-del-warning>",
+         "note": "Falso positivo: <razón concreta>"
+       }
+     ]
+   }
+   ```
+3. Commitea el archivo junto al código que genera el warning.
+
+> El campo `note` es obligatorio por convención del proyecto. Sin nota, el PR no se revisa.
+
 ## Canales de entrega
 
 El sistema usa un registro de canales (`ChannelRegistry`) que permite agregar nuevos proveedores sin modificar el core de ingesta.
