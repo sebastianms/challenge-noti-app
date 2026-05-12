@@ -58,8 +58,8 @@ Convenciones: `[P]` paralelizable (archivos distintos), `[USx]` user story owner
 
 ## US7 — Tour de la aplicación (P2)
 
-- [ ] T031b [P] [US7] `docs/app-tour.md` con sección por cada área del panel: Home, Dashboard, Reglas, Auditoría, Blacklist, Templates, DLQ. Cada sección: propósito (2-3 líneas), rol con acceso, acción típica con pasos usando datos de seed, qué observar en pantalla.
-- [ ] T031c [US7] Agregar link a `docs/app-tour.md` (URL absoluta al repo GitHub) en el footer de `app/views/home/show.html.erb`.
+- [x] T031b [P] [US7] `docs/app-tour.md` con sección por cada área del panel: Home, Dashboard, Reglas, Auditoría, Blacklist, Templates, DLQ. Cada sección: propósito (2-3 líneas), rol con acceso, acción típica con pasos usando datos de seed, qué observar en pantalla.
+- [ ] T031c [US7] Agregar link a `docs/app-tour.md` (URL absoluta al repo GitHub) en el footer de `app/views/home/show.html.erb`. (Bloqueado por US5 — la view no existe aún)
 
 ## US5 — Home page pública (P2)
 
