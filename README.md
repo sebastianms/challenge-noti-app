@@ -277,7 +277,7 @@ Ver `.design-logs/ADL-010-blacklist-pre-rules-evaluation.md` para el rationale c
 
 ## Panel admin (UI)
 
-El panel admin completo está disponible desde Phase 7. Incluye dashboard de métricas, gestión de reglas y generación de datos mock.
+El panel admin completo está disponible desde Phase 8. Incluye dashboard de métricas, gestión de reglas, auditoría de notificaciones, gestión de blacklist y generación de datos mock. Toda autenticación usa Devise — no existe ningún endpoint bajo `/admin/*` con HTTP Basic.
 
 ### Crear usuarios seed
 
@@ -313,6 +313,21 @@ Tras autenticarse, el usuario es redirigido a `/admin/dashboard`. El sistema blo
 | `/admin/rules/:id/edit` | GET | Editar regla | admin, product |
 | `/admin/rules/:id/history` | GET | Historial de cambios | admin, product |
 | `/admin/mock_data` | POST | Generar datos mock | admin |
+| `/admin/audits` | GET | Auditoría de notificaciones (filtros + CSV) | todos |
+| `/admin/audits/:correlation_id` | GET | Timeline de un envío + payload + regla | todos |
+| `/admin/blacklist` | GET | Lista de blacklist (filtros + CSV) | todos |
+| `/admin/blacklist` | POST | Alta manual en blacklist | admin, support |
+| `/admin/blacklist/:id` | DELETE | Baja con audit trail | admin, support |
+
+### Filtros disponibles en `/admin/audits`
+
+`correlation_id`, `recipient`, `status`, `source`, `reason`, `rule_id`, `from`, `to`, `page`, `per_page`.
+Agregar `?format=csv` a cualquier búsqueda descarga las filas en CSV.
+
+### Filtros disponibles en `/admin/blacklist`
+
+`recipient`, `scope`, `target`, `source`.
+Agregar `?format=csv` descarga las filas filtradas en CSV.
 
 ### Permisos por rol
 
@@ -321,6 +336,9 @@ Tras autenticarse, el usuario es redirigido a `/admin/dashboard`. El sistema blo
 | dashboard | ✓ | ✓ | ✓ | ✓ |
 | rules | ✓ | ✓ | ✗ | ✗ |
 | mock_data | ✓ | ✗ | ✗ | ✗ |
+| audits | ✓ | ✓ | ✓ | ✓ |
+| blacklist (lectura) | ✓ | ✓ | ✓ | ✓ |
+| blacklist (alta/baja) | ✓ | ✗ | ✗ | ✓ |
 
 ### Feature flag Mock Data
 

@@ -114,14 +114,17 @@ Implementado en feature [004-rules-engine](004-rules-engine/):
 
 ---
 
-## Phase 8 — User Story 6: UI Admin — Auditoría + Blacklist (R6, R8 visibles)
+## Phase 8 — User Story 6: UI Admin — Auditoría + Blacklist (R6, R8 visibles)  `[DONE]`
 
 > Soporte y compliance operan sin pedirle ayuda a ingeniería.
 
-- [ ] **Auditoría y búsqueda**: filtros + timeline por envío + payload + regla aplicada
-- [ ] **Gestión de blacklist**: tabla con filtros, alta manual, baja con audit trail, exportación CSV
+- [x] Migración HTTP Basic → Devise en `/admin/audits` y `/admin/blacklist`; 0 endpoints admin con HTTP Basic.
+- [x] `RoleAuthorizer` extendido: `audits` (todos), `blacklist_read` (todos), `blacklist_write` (admin+support).
+- [x] **Auditoría y búsqueda**: filtros `reason`/`rule_id` + timeline visual por `correlation_id` (`/admin/audits/:cid`) con payload y link a regla aplicada. Export CSV (`?format=csv`).
+- [x] **Gestión de blacklist**: tabla con filtros, alta manual, baja con `removed_by=email`, exportación CSV. ADL-012.
+- [x] `removed_by` pasa de `"admin"` (genérico HTTP Basic) a `current_admin_user.email` (trazable).
 
-**DoD**: soporte responde una consulta real ("¿por qué Juan no recibió MFA?") en < 30 s usando solo la UI.
+**DoD ✅**: soporte responde una consulta real ("¿por qué Juan no recibió MFA?") en < 30 s usando solo la UI. Cobertura 100%, 500 ejemplos en verde.
 
 ---
 

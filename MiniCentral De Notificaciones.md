@@ -183,7 +183,7 @@ La pieza más valiosa fueron los **Block Checkpoints**: al cerrar cada bloque de
 
 Los **Architectural Decision Logs (ADLs)** son documentos cortos en `.design-logs/` que registran cada decisión técnica no obvia con cuatro secciones fijas: Contexto · Decisión · Alternativas consideradas · Consecuencias positivas y negativas. Funcionan como memoria institucional: meses después, un nuevo integrante puede entender por qué se eligió `SKIP LOCKED` sobre Redis sin tener que reconstruir el debate.
 
-## **A.2. Las cinco features y su orden**
+## **A.2. Las siete features y su orden**
 
 Descompusimos el roadmap en *shippable slices* — cada feature deja la plataforma en un estado funcional y demostrable. El orden lo dicté estrictamente por dependencias (no se puede auditar lo que no se envía; no se puede filtrar lo que no se decide):
 
@@ -194,8 +194,10 @@ Descompusimos el roadmap en *shippable slices* — cada feature deja la platafor
 | 003 — audit-query | `AuditSearch` con filtros + endpoint Hotwire `/admin/audits` + webhook async SendGrid con verificación Ed25519 + `PartitionManager` | Soporte responde "¿por qué Juan no recibió X?" en segundos |
 | 004 — rules-engine | `RulesEngine` (rate limit + cooldown + digest) + `RuleCache` con invalidación sincrónica + `PendingDigest` + `DigestScheduler` | Stakeholders ajustan reglas sin redeploy; aplican en ≤ 5 min |
 | 005 — blacklist-bounces | `BlacklistEvaluator` pre-reglas + auto-blacklist desde hard bounce/dropped/spamreport + UI `/admin/blacklist` | Destinatario bloqueado nunca recibe; hard bounce → blacklist en ≤ 30 s |
+| 006 — admin-dashboard-rules | Devise + roles (`admin`/`product`/`support`/`engineering`), dashboard de métricas con Chartkick, CRUD de reglas con audit trail (`RuleChange`), mock data con feature flag | Un usuario `product` modifica una regla desde la UI; el cambio se refleja en métricas |
+| 007 — admin-ui-audit-blacklist | Migración HTTP Basic → Devise en audits/blacklist, timeline visual por `correlation_id`, filtros `reason`/`rule_id`, CSV export en ambos módulos, `removed_by=email` | Soporte resuelve "¿por qué Juan no recibió X?" en < 30 s desde la UI |
 
-Cada feature reusó componentes de las anteriores. La 005 toca menos código nuevo del que aparenta: aprovechamos `RecipientNormalizer` (001), `WebhookEventWorker` (003), `NotificationAudit` particionado (003), HTTP Basic auth (003) y `Decision/SendResult` (004).
+Cada feature reusó componentes de las anteriores. La 007 toca poco código nuevo: aprovechamos `AuditSearch` (003), `RoleAuthorizer` (006), `BaseController` (006) y `NotificationAudit` particionado (003).
 
 ## **A.3. Dinámica de colaboración humano + asistente IA**
 
@@ -243,20 +245,21 @@ Las siguientes son las situaciones que más nos enseñaron sobre el proceso y el
 
 ## **A.5. Métricas del proceso**
 
-Al cerrar feature 006 (Phase 7 del roadmap — UI Admin Dashboard + Reglas):
+Al cerrar feature 007 (Phase 8 del roadmap — UI Admin Auditoría + Blacklist):
 
 | Métrica | Valor |
 | :---- | :---- |
-| Features completadas | 6 (001–006) — MVP + UI Admin Panel |
-| Tasks ejecutadas | 256 sobre 256 (39 + 36 + 46 + 45 + 40 + 50) |
-| Specs en `specs/` | 6 features × (spec + plan + research + data-model + contracts + quickstart + tasks) ≈ 42 documentos |
-| ADLs documentados | 11 (de baja velocidad de cambio: ~2 por feature) |
-| Tests RSpec | 457 ejemplos · 100% de líneas (722/722) |
-| Lint warnings | 0 en ~148 archivos Ruby |
+| Features completadas | 7 (001–007) — MVP + UI Admin Panel completo |
+| Tasks ejecutadas | 279 sobre 279 (39 + 36 + 46 + 45 + 40 + 50 + 23) |
+| Specs en `specs/` | 7 features × (spec + plan + research + data-model + contracts + quickstart + tasks) ≈ 49 documentos |
+| ADLs documentados | 12 (de baja velocidad de cambio: ~2 por feature) |
+| Tests RSpec | 507 ejemplos · 100% de líneas (757/757) |
+| Lint warnings | 0 en ~176 archivos Ruby |
 | Brakeman + bundler-audit | 0 issues |
+| Benchmark SC-002 | p95 = 2.19 ms con 10 000 audits (target ≤ 2 000 ms) |
 | Benchmark SC-005 | p95 = 1.4 ms con 100 000 filas (target ≤ 5 ms) |
-| Commits | ~70, agrupados por bloque y feature |
-| Tiempo aproximado | 6 sesiones de trabajo intensivo, sin retrabajo significativo |
+| Commits | ~78, agrupados por bloque y feature |
+| Tiempo aproximado | 7 sesiones de trabajo intensivo, sin retrabajo significativo |
 
 La métrica más relevante para SDD no es ninguna de esas: es **cero retrabajo de spec**. Ningún `spec.md` lo reescribimos tras empezar a implementar. Las clarificaciones las atajamos en la fase Clarify; los trade-offs no obvios los dejamos como ADL. Los bugs que encontramos durante implementación fueron de código, no de diseño.
 
@@ -273,5 +276,5 @@ SDD no nos eliminó la complejidad — la **trasladó hacia adelante**, al momen
 
 Vale la pena cerrar con una reflexión sobre la colaboración con IA: el asistente no reemplazó mi rol de arquitecto ni de decisor, lo **amplificó**. La velocidad para producir specs detallados, ejecutar tests, leer y modificar muchos archivos a la vez, y mantener la disciplina del Block Checkpoint sin saltearse pasos fue mucho mayor que la que hubiera tenido trabajando solo. Pero las decisiones que importan — qué priorizar, qué trade-off aceptar, cuándo replanificar — siguieron siendo mías. La IA propone, el humano dispone. Esa división de roles fue lo que mantuvo la coherencia del proyecto a lo largo de cinco features.
 
-La aplicación está **terminada en su comportamiento mínimo viable y en su primera capa de UI operativa** (Parte 1 + Parte 2 + UI Admin del enunciado): las seis features — API de notificaciones, dispatch por email, auditoría consultable, motor de reglas configurable, blacklist + bounces automáticos, y panel admin con dashboard + CRUD de reglas — están cerradas con sus respectivos DoD verificados, 457 tests verdes y cobertura del 100%. Las phases siguientes del roadmap (UI Admin para auditoría y blacklist, editor de templates, DLQ operacional, observabilidad, hardening de performance) son evolución natural sobre la misma base, sin reescritura.
+La aplicación está **terminada en su comportamiento mínimo viable y en su segunda capa de UI operativa** (Parte 1 + Parte 2 + UI Admin del enunciado): las siete features — API de notificaciones, dispatch por email, auditoría consultable, motor de reglas configurable, blacklist + bounces automáticos, panel admin con dashboard + CRUD de reglas, y UI de auditoría + blacklist con Devise — están cerradas con sus respectivos DoD verificados, 507 tests verdes y cobertura del 100%. Todo el namespace `/admin/*` usa Devise; cero endpoints con HTTP Basic. Las phases siguientes del roadmap (editor de templates, DLQ operacional, observabilidad, hardening de performance) son evolución natural sobre la misma base, sin reescritura.
 
