@@ -235,22 +235,28 @@ Las siguientes son las situaciones que más nos enseñaron sobre el proceso y el
 
 **9. Benchmark de SC-005 mejor de lo proyectado (feature 005).** El spec exigía que `BlacklistEvaluator.match` tuviera p95 ≤ 5 ms con 100 000 filas. La query única con OR sobre `(recipient_canonical, scope, target)` + `LIMIT 1` resultó dar **p95 = 1.4 ms y avg = 0.87 ms** — casi 4× mejor que el target. El índice `idx_blacklist_lookup` se aprovecha incluso con la condición OR porque la cardinalidad por destinatario es bajísima (1-3 filas típicamente). Lección: a veces lo que parece "una pre-optimización innecesaria" (definir el target de performance en spec, no después) es justamente lo que te permite verificar que el diseño no degrada bajo carga real.
 
+**10. `Devise.mappings` vacío hasta que se dibujan las rutas (feature 006).** En los request specs de Devise el helper `sign_in(user)` lanza `"Could not find a valid mapping"` porque el servicio de test (`docker compose run --rm test`) no pre-dibuja las rutas. La causa raíz: `Devise.mappings` es un hash que se popula al llamar a `devise_for` en `routes.rb`, y eso solo ocurre cuando Rails dibuja las rutas por primera vez. Fix: agregar `Rails.application.reload_routes!` en el bloque `before(:suite)` de `rails_helper.rb`, justo después de `eager_load!`. Lección: las gemas que registran estado global en tiempo de routing (como Devise) requieren forzar el dibujado de rutas antes del primer test.
+
+**11. `Rails.cache` con `:null_store` en test env rompe specs de cache hit (feature 006).** `config/environments/test.rb` usa `config.cache_store = :null_store` para no interferir entre tests. Eso hace que el spec que verifica "segunda llamada retorna el mismo resultado sin nueva DB query" siempre falle: el null store no guarda nada. Fix: un bloque `around` en el spec que reemplaza `Rails.cache` temporalmente con `ActiveSupport::Cache::MemoryStore.new` y lo restaura en `ensure`. Lección: los stores de cache tienen contratos distintos en test vs. producción; el spec de cache hit requiere un store real, aunque sea en memoria.
+
+**12. Las lambdas en `describe` capturan `self` del contexto de clase, no del ejemplo (feature 006).** La primera versión del spec de role gates definía `GUARDED_ROUTES = { dashboard: -> { get admin_dashboard_path } }`. Al ejecutarse, `get` no estaba disponible porque la lambda capturaba el `self` del nivel de clase (donde `get` es `Module#get`, no el helper de request specs). Fix: reescribir con un método de instancia `def request_for(section)` dentro del describe, que sí se evalúa en el contexto del ejemplo. Lección: en RSpec, los bloques de configuración (`let`, `before`, `subject`) y los helpers (`get`, `post`) son métodos de instancia del ejemplo; las lambdas definidas fuera no los ven.
+
 ## **A.5. Métricas del proceso**
 
-Al cerrar feature 005 (Phase 6 del roadmap, último P1 del MVP):
+Al cerrar feature 006 (Phase 7 del roadmap — UI Admin Dashboard + Reglas):
 
 | Métrica | Valor |
 | :---- | :---- |
-| Features completadas | 5 (001, 002, 003, 004, 005) — MVP cerrado |
-| Tasks ejecutadas | 206 sobre 206 (39 + 36 + 46 + 45 + 40) |
-| Specs en `specs/` | 5 features × (spec + plan + research + data-model + contracts + quickstart + tasks) ≈ 35 documentos |
-| ADLs documentados | 10 (de baja velocidad de cambio: ~2 por feature) |
-| Tests RSpec | 335 ejemplos · 100% de líneas (571/571) |
-| Lint warnings | 0 en 135 archivos Ruby |
+| Features completadas | 6 (001–006) — MVP + UI Admin Panel |
+| Tasks ejecutadas | 256 sobre 256 (39 + 36 + 46 + 45 + 40 + 50) |
+| Specs en `specs/` | 6 features × (spec + plan + research + data-model + contracts + quickstart + tasks) ≈ 42 documentos |
+| ADLs documentados | 11 (de baja velocidad de cambio: ~2 por feature) |
+| Tests RSpec | 457 ejemplos · 100% de líneas (722/722) |
+| Lint warnings | 0 en ~148 archivos Ruby |
 | Brakeman + bundler-audit | 0 issues |
 | Benchmark SC-005 | p95 = 1.4 ms con 100 000 filas (target ≤ 5 ms) |
-| Commits | ~60, agrupados por bloque y feature |
-| Tiempo aproximado | 5 sesiones de trabajo intensivo, sin retrabajo significativo |
+| Commits | ~70, agrupados por bloque y feature |
+| Tiempo aproximado | 6 sesiones de trabajo intensivo, sin retrabajo significativo |
 
 La métrica más relevante para SDD no es ninguna de esas: es **cero retrabajo de spec**. Ningún `spec.md` lo reescribimos tras empezar a implementar. Las clarificaciones las atajamos en la fase Clarify; los trade-offs no obvios los dejamos como ADL. Los bugs que encontramos durante implementación fueron de código, no de diseño.
 
@@ -267,5 +273,5 @@ SDD no nos eliminó la complejidad — la **trasladó hacia adelante**, al momen
 
 Vale la pena cerrar con una reflexión sobre la colaboración con IA: el asistente no reemplazó mi rol de arquitecto ni de decisor, lo **amplificó**. La velocidad para producir specs detallados, ejecutar tests, leer y modificar muchos archivos a la vez, y mantener la disciplina del Block Checkpoint sin saltearse pasos fue mucho mayor que la que hubiera tenido trabajando solo. Pero las decisiones que importan — qué priorizar, qué trade-off aceptar, cuándo replanificar — siguieron siendo mías. La IA propone, el humano dispone. Esa división de roles fue lo que mantuvo la coherencia del proyecto a lo largo de cinco features.
 
-La aplicación está **terminada en su comportamiento mínimo viable** (Parte 1 + Parte 2 del enunciado): las cinco features del MVP — API de notificaciones, dispatch por email, auditoría consultable, motor de reglas configurable y blacklist + bounces automáticos — están cerradas con sus respectivos DoD verificados, 335 tests verdes y cobertura del 100%. Las phases siguientes del roadmap (UI Admin completa para reglas y blacklist, dashboard de métricas, observabilidad, hardening de performance) son evolución natural sobre la misma base, sin reescritura.
+La aplicación está **terminada en su comportamiento mínimo viable y en su primera capa de UI operativa** (Parte 1 + Parte 2 + UI Admin del enunciado): las seis features — API de notificaciones, dispatch por email, auditoría consultable, motor de reglas configurable, blacklist + bounces automáticos, y panel admin con dashboard + CRUD de reglas — están cerradas con sus respectivos DoD verificados, 457 tests verdes y cobertura del 100%. Las phases siguientes del roadmap (UI Admin para auditoría y blacklist, editor de templates, DLQ operacional, observabilidad, hardening de performance) son evolución natural sobre la misma base, sin reescritura.
 

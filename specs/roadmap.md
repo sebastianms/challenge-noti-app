@@ -99,15 +99,18 @@ Implementado en feature [004-rules-engine](004-rules-engine/):
 
 ---
 
-## Phase 7 — User Story 5: UI Admin — Dashboard + Reglas (R5 visible)
+## Phase 7 — User Story 5: UI Admin — Dashboard + Reglas (R5 visible)  `[DONE]`
 
 > Primera entrega visible al stakeholder. Cierra el loop "configurar sin código".
 
-- [ ] Layout admin con SSO + roles (`admin`, `product`, `support`, `engineering`)
-- [ ] **Dashboard**: volumen por tipo/canal, tasa de filtrado, queue depth, DLQ size, error rate
-- [ ] **Gestión de reglas**: lista editable con preview, validaciones, audit trail de cambios
+- [x] Layout admin con Devise + roles (`admin`, `product`, `support`, `engineering`). Login en `/admin/login`, logout, lockable (5 intentos), paranoid mode.
+- [x] `RoleAuthorizer` — matriz de permisos: admin/product → dashboard+rules; engineering/support → solo dashboard; solo admin → mock_data.
+- [x] **Dashboard** (`/admin/dashboard`): volumen 7 días (bar chart), tasa de filtrado (pie chart), queue depth, DLQ size, error rate por tipo. Cache 30 s en métricas históricas, queue depth en vivo.
+- [x] **Gestión de reglas** (`/admin/rules`): CRUD completo con validaciones, historial de cambios campo-a-campo (`RuleChange` con before/after JSONB). Cada mutación en transacción atómica.
+- [x] **Mock data** (`/admin/mock_data`): feature flag ENV `ALLOW_MOCK_DATA_FEATURE`. Genera 5 reglas, 3 entradas de blacklist, 20 audits y 5 items en cola. Idempotente para reglas/blacklist.
+- [x] ADL-011 — Devise + admin_users(role) en lugar de HTTP Basic para el panel admin.
 
-**DoD**: un usuario con rol `product` modifica una regla desde la UI y el cambio se refleja en métricas del dashboard.
+**DoD ✅**: un usuario con rol `product` modifica una regla desde la UI y el cambio se refleja en métricas del dashboard. Cobertura 100%, 457 ejemplos en verde.
 
 ---
 

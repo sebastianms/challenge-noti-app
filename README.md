@@ -275,6 +275,65 @@ Soft bounces (`type=blocked`) y `deferred` solo generan audit, no bloquean.
 
 Ver `.design-logs/ADL-010-blacklist-pre-rules-evaluation.md` para el rationale completo.
 
+## Panel admin (UI)
+
+El panel admin completo está disponible desde Phase 7. Incluye dashboard de métricas, gestión de reglas y generación de datos mock.
+
+### Crear usuarios seed
+
+```bash
+bin/rails db:seed
+```
+
+Crea los siguientes usuarios si no existen (solo en `development` / `test`):
+
+| Email | Password | Rol |
+|-------|----------|-----|
+| `admin@noti-central.local` | `Admin12345678!` | `admin` |
+| `product@noti-central.local` | `Admin12345678!` | `product` |
+| `support@noti-central.local` | `Admin12345678!` | `support` |
+
+### Login
+
+```
+GET /admin/login
+```
+
+Tras autenticarse, el usuario es redirigido a `/admin/dashboard`. El sistema bloquea la cuenta tras 5 intentos fallidos (desbloqueo automático en 10 min).
+
+### Rutas del panel
+
+| Ruta | Método | Descripción | Roles permitidos |
+|------|--------|-------------|-----------------|
+| `/admin/login` | GET/POST | Formulario de login | — |
+| `/admin/logout` | DELETE | Cierra sesión | — |
+| `/admin/dashboard` | GET | Dashboard de métricas | todos |
+| `/admin/rules` | GET | Lista de reglas | admin, product |
+| `/admin/rules/new` | GET | Nueva regla | admin, product |
+| `/admin/rules/:id/edit` | GET | Editar regla | admin, product |
+| `/admin/rules/:id/history` | GET | Historial de cambios | admin, product |
+| `/admin/mock_data` | POST | Generar datos mock | admin |
+
+### Permisos por rol
+
+| Sección | admin | product | engineering | support |
+|---------|-------|---------|-------------|---------|
+| dashboard | ✓ | ✓ | ✓ | ✓ |
+| rules | ✓ | ✓ | ✗ | ✗ |
+| mock_data | ✓ | ✗ | ✗ | ✗ |
+
+### Feature flag Mock Data
+
+El botón "Generar Data Mock" (visible solo para `admin`) puede desactivarse con:
+
+```bash
+ALLOW_MOCK_DATA_FEATURE=false bin/rails server
+```
+
+El controller también verifica el flag (defensa en profundidad): un POST directo a `/admin/mock_data` con el flag off recibe 403.
+
+---
+
 ## Tareas Rake
 
 | Comando | Descripción |
