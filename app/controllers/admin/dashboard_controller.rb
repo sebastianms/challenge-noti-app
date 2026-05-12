@@ -3,7 +3,7 @@
 module Admin
   class DashboardController < Admin::BaseController
     def index
-      head :ok
+      @snapshot = Admin::DashboardMetrics.new.snapshot
     end
 
     private

@@ -1,0 +1,50 @@
+<h2 style="margin-bottom:1.5rem;font-size:1.2rem;font-weight:600">Dashboard</h2>
+
+<div data-section="counters" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem">
+  <div style="background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center">
+    <div style="font-size:2.5rem;font-weight:700;color:#1a1a2e"><%= @snapshot[:queue_depth] %></div>
+    <div style="font-size:.85rem;color:#666;margin-top:.25rem">Cola pendiente</div>
+  </div>
+  <div style="background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center">
+    <div style="font-size:2.5rem;font-weight:700;color:#c0392b"><%= @snapshot[:dlq_depth] %></div>
+    <div style="font-size:.85rem;color:#666;margin-top:.25rem">Cola de errores (DLQ)</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:2rem">
+  <div data-section="volume" style="background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+    <h3 style="font-size:.9rem;font-weight:600;margin-bottom:1rem;color:#333">Volumen (últimos 7 días)</h3>
+    <%= bar_chart @snapshot[:volume], height: "220px", colors: ["#1a1a2e"] %>
+  </div>
+  <div data-section="filter-rate" style="background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+    <h3 style="font-size:.9rem;font-weight:600;margin-bottom:1rem;color:#333">Tasa de filtrado</h3>
+    <%= pie_chart @snapshot[:filter_rate], height: "220px",
+          colors: ["#27ae60", "#e74c3c", "#e67e22", "#3498db"] %>
+  </div>
+</div>
+
+<div data-section="error-rate" style="background:#fff;padding:1.5rem;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+  <h3 style="font-size:.9rem;font-weight:600;margin-bottom:1rem;color:#333">Errores por tipo de notificación</h3>
+  <% if @snapshot[:error_rate].empty? %>
+    <p style="color:#aaa;font-size:.9rem">Sin errores registrados.</p>
+  <% else %>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="border-bottom:2px solid #eee">
+          <th style="text-align:left;padding:.5rem .75rem;color:#555">Tipo</th>
+          <th style="text-align:right;padding:.5rem .75rem;color:#555">Fallos</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @snapshot[:error_rate].each do |type, count| %>
+          <tr style="border-bottom:1px solid #f0f0f0">
+            <td style="padding:.5rem .75rem"><%= type.presence || "(sin tipo)" %></td>
+            <td style="padding:.5rem .75rem;text-align:right;font-weight:600;color:#c0392b"><%= count %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
+
+<%= render "admin/shared/mock_data_button" %>
