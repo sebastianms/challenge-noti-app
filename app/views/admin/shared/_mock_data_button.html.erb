@@ -1,1 +1,6 @@
-<%# Populated in US4 — MockDataController %>
+<% if Admin::MockDataFeature.enabled? && current_admin_user&.role == "admin" %>
+  <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid #eee">
+    <%= button_to "Generar Data Mock", admin_mock_data_path, method: :post,
+          style: "padding:.45rem 1rem;background:#e67e22;color:#fff;border:none;border-radius:6px;font-size:.875rem;cursor:pointer" %>
+  </div>
+<% end %>

@@ -3,7 +3,14 @@
 module Admin
   class MockDataController < Admin::BaseController
     def create
-      head :ok
+      unless Admin::MockDataFeature.enabled?
+        render "errors/forbidden", status: :forbidden
+        return
+      end
+
+      result = Admin::MockDataGenerator.new.call
+      redirect_to request.referer || admin_dashboard_path,
+                  notice: "Mock data generado: #{result.rules_seeded} reglas, #{result.audits_added} audits, #{result.queue_items_added} items en cola."
     end
 
     private
