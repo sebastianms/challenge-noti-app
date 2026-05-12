@@ -50,9 +50,34 @@ Los roles (`admin`, `product`, `support`, `engineering`) se gestionan con `Admin
 
 ---
 
+## Nota de extensión — Devise 5.0.4 (Phase 9, 2026-05-12)
+
+**CVE-2026-32700** (`GHSA-57hq-95w6-v4fc`, criticidad Media) afecta a Devise ≤ 4.9.4: race condition en el flujo `confirmable` de cambio de email que permite a un usuario confirmar un email al que ya no tiene acceso. Detectado por `bundler-audit` en CI.
+
+**Acción**: actualizado a Devise 5.0.4 (mínimo seguro: `>= 5.0.3`).
+
+**Breaking change identificado**: `Devise::SessionsController#destroy` en v5 invoca `respond_to_on_destroy(non_navigational_status: :no_content)` con un keyword argument que no existía en v4. Nuestro override en `Admin::SessionsController` lanzaba `ArgumentError: wrong number of arguments (given 1, expected 0)`. Fix aplicado:
+
+```ruby
+# Antes (Devise 4)
+def respond_to_on_destroy
+  redirect_to new_admin_user_session_path, notice: "Sesión cerrada."
+end
+
+# Después (Devise 5)
+def respond_to_on_destroy(**_opts)
+  redirect_to new_admin_user_session_path, notice: "Sesión cerrada."
+end
+```
+
+**Regla para futuras upgrades de Devise**: revisar el CHANGELOG de `Devise::SessionsController` ante cualquier bump de versión mayor. El método `respond_to_on_destroy` es un hook explícito que sobreescribimos — es superficie de ruptura garantizada en cambios de firma.
+
+---
+
 ## Referencias
 
 - [Research R1/R2](../specs/006-admin-dashboard-rules/research.md) — análisis de opciones de autenticación.
 - [tasks.md T006–T015](../specs/006-admin-dashboard-rules/tasks.md) — implementación Devise + BaseController.
 - `app/policies/admin/role_authorizer.rb` — PERMISSIONS hash.
 - `app/controllers/admin/base_controller.rb` — `authorize_section!`.
+- [GHSA-57hq-95w6-v4fc](https://github.com/heartcombo/devise/security/advisories/GHSA-57hq-95w6-v4fc) — advisory CVE-2026-32700.
