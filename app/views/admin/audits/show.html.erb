@@ -1,41 +1,99 @@
-<h1>Timeline — <code><%= params[:correlation_id] %></code></h1>
-
-<%= link_to "← Volver a auditoría", admin_audits_path %>
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h2 class="text-xl font-semibold text-gray-800">Timeline de evento</h2>
+    <code class="text-xs text-gray-400 mt-1 block"><%= params[:correlation_id] %></code>
+  </div>
+  <%= link_to "← Volver a auditoría", admin_audits_path,
+        class: "text-sm text-indigo-600 hover:text-indigo-800" %>
+</div>
 
 <% if @timeline.empty? %>
-  <p>No se encontraron eventos para este correlation_id.</p>
+  <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-sm text-gray-400">
+    No se encontraron eventos para este correlation_id.
+  </div>
 <% else %>
   <% first = @timeline.first %>
-  <section style="margin: 1rem 0;">
-    <strong>Tipo:</strong> <%= first.notification_type || "—" %> &nbsp;
-    <strong>Destinatario:</strong> <%= first.recipient_canonical || "—" %>
-  </section>
 
-  <% if @payload.present? %>
-    <details>
-      <summary>Payload del evento</summary>
-      <pre style="background:#f5f5f5;padding:0.5rem;"><%= JSON.pretty_generate(@payload) rescue @payload.inspect %></pre>
-    </details>
-  <% end %>
+  <%# ── Resumen del evento ─────────────────────────────────── %>
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+    <div>
+      <span class="block text-xs font-medium text-gray-500 mb-1">Tipo</span>
+      <span class="font-semibold text-gray-800"><%= first.notification_type || "—" %></span>
+    </div>
+    <div>
+      <span class="block text-xs font-medium text-gray-500 mb-1">Destinatario</span>
+      <span class="text-gray-700"><%= first.recipient_canonical || "—" %></span>
+    </div>
+    <div>
+      <span class="block text-xs font-medium text-gray-500 mb-1">Canal</span>
+      <span class="text-gray-700"><%= first.channel || "—" %></span>
+    </div>
+    <div>
+      <span class="block text-xs font-medium text-gray-500 mb-1">Pasos</span>
+      <span class="font-semibold text-gray-800"><%= @timeline.size %></span>
+    </div>
+  </div>
 
   <% if @rule %>
-    <p>
-      Regla aplicada: <%= link_to "##{@rule.id} — #{@rule.notification_type}", edit_admin_rule_path(@rule) %>
-      (prioridad: <%= @rule.priority %>, max/día: <%= @rule.max_per_day || "—" %>)
-    </p>
+    <div class="bg-indigo-50 border border-indigo-200 rounded-xl px-5 py-3 mb-6 text-sm flex items-center gap-3">
+      <span class="text-indigo-500">📋</span>
+      <span class="text-gray-700">
+        Regla aplicada:
+        <%= link_to "##{@rule.id} — #{@rule.notification_type}", edit_admin_rule_path(@rule),
+              class: "font-semibold text-indigo-700 hover:text-indigo-900" %>
+        &middot; prioridad: <strong><%= @rule.priority %></strong>
+        &middot; max/día: <strong><%= @rule.max_per_day || "—" %></strong>
+      </span>
+    </div>
   <% end %>
 
-  <ol style="list-style:none;padding:0;border-left:3px solid #ccc;margin:1rem 0;">
-    <% @timeline.each do |event| %>
-      <% reason = event.metadata&.dig("reason") %>
-      <li style="padding:0.5rem 1rem;margin-bottom:0.25rem;">
-        <strong><%= event.created_at.strftime("%Y-%m-%d %H:%M:%S.%3N") %></strong>
-        — <span style="font-weight:bold;"><%= event.status %></span>
-        · <%= event.source %> · <%= event.channel %>
-        <% if reason %>
-          · <em style="color:#c00;">motivo: <%= reason %></em>
-        <% end %>
-      </li>
-    <% end %>
-  </ol>
+  <%# ── Línea de tiempo ──────────────────────────────────────── %>
+  <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <h3 class="text-sm font-semibold text-gray-700 mb-5">Secuencia de estados</h3>
+    <ol class="relative border-l-2 border-gray-200 space-y-6 pl-6">
+      <% @timeline.each do |entry| %>
+        <%
+          reason = entry.metadata&.dig("reason")
+          color = case entry.status
+                  when "delivered"  then "bg-green-500"
+                  when "dispatched" then "bg-indigo-500"
+                  when "enqueued"   then "bg-blue-400"
+                  when "filtered"   then "bg-amber-400"
+                  when "failed"     then "bg-red-500"
+                  else "bg-gray-400"
+                  end
+        %>
+        <li class="relative">
+          <span class="absolute -left-8 top-1 w-3 h-3 rounded-full <%= color %>"></span>
+          <div class="flex items-baseline gap-3 flex-wrap">
+            <span class="text-xs text-gray-400 whitespace-nowrap font-mono">
+              <%= entry.created_at.strftime("%Y-%m-%d %H:%M:%S") %>
+            </span>
+            <span class="text-sm font-semibold text-gray-800"><%= entry.status %></span>
+            <span class="text-xs text-gray-500"><%= entry.source %> · <%= entry.channel %></span>
+            <% if reason %>
+              <span class="text-xs text-red-600 font-medium">motivo: <%= reason %></span>
+            <% end %>
+          </div>
+          <% if entry.metadata&.except("reason", "rule_id").present? %>
+            <div class="mt-1 text-xs text-gray-400">
+              <% entry.metadata.except("reason", "rule_id").each do |k, v| %>
+                <span class="mr-3"><strong><%= k %>:</strong> <%= v %></span>
+              <% end %>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </div>
+
+  <%# ── Payload ──────────────────────────────────────────────── %>
+  <% if @payload.present? %>
+    <details class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <summary class="px-6 py-3 text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 select-none">
+        Payload del evento
+      </summary>
+      <pre class="px-6 py-4 text-xs bg-gray-50 border-t border-gray-100 overflow-x-auto text-gray-700"><%= JSON.pretty_generate(@payload) rescue @payload.inspect %></pre>
+    </details>
+  <% end %>
 <% end %>

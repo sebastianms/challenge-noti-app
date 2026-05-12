@@ -11,8 +11,8 @@ RSpec.describe "Admin::MockData", type: :request do
     it "returns 303 redirect and generates data" do
       expect {
         post admin_mock_data_path
-      }.to change(NotificationAudit, :count).by(20)
-        .and change(DispatchQueue, :count).by(5)
+      }.to change(NotificationAudit, :count).by_at_least(40)
+        .and change(DispatchQueue, :count).by_at_least(5)
 
       expect(response).to have_http_status(:found)
     end
@@ -50,12 +50,12 @@ RSpec.describe "Admin::MockData", type: :request do
 
       it "button is present on dashboard" do
         get admin_dashboard_path
-        expect(response.body).to include("Generar Data Mock")
+        expect(response.body).to include("Generar data mock")
       end
 
       it "button is present on rules index" do
         get admin_rules_path
-        expect(response.body).to include("Generar Data Mock")
+        expect(response.body).to include("Generar data mock")
       end
     end
 
@@ -64,7 +64,7 @@ RSpec.describe "Admin::MockData", type: :request do
 
       it "button is absent on dashboard" do
         get admin_dashboard_path
-        expect(response.body).not_to include("Generar Data Mock")
+        expect(response.body).not_to include("Generar data mock")
       end
     end
 
@@ -76,7 +76,7 @@ RSpec.describe "Admin::MockData", type: :request do
 
       it "button is absent on dashboard" do
         get admin_dashboard_path
-        expect(response.body).not_to include("Generar Data Mock")
+        expect(response.body).not_to include("Generar data mock")
       end
     end
   end

@@ -5,8 +5,8 @@
 <div class="mt-8 bg-white rounded-xl border border-gray-200 p-6 max-w-2xl">
   <h3 class="text-base font-semibold text-gray-800 mb-1">Preview en vivo</h3>
   <p class="text-sm text-gray-500 mb-4">
-    Pegá un JSON de contexto de ejemplo (ej: <code class="bg-gray-100 px-1 rounded">{"name":"Ana"}</code>)
-    y enviá para ver cómo quedaría el copy.
+    Ingresa un JSON de contexto de ejemplo (ej: <code class="bg-gray-100 px-1 rounded">{"name":"Ana"}</code>)
+    y envía para ver cómo quedaría el contenido.
   </p>
 
   <%= form_with url: preview_admin_template_path(@template), method: :post, local: true, class: "space-y-3" do |f| %>

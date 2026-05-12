@@ -60,8 +60,69 @@
     </ol>
   </section>
 
+  <%# ── Recursos ────────────────────────────────────────────────────────────── %>
+  <section class="bg-indigo-50 border-y border-indigo-100 py-14 px-6">
+    <div class="max-w-5xl mx-auto">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-2 text-center">Explora la plataforma</h2>
+      <p class="text-center text-gray-500 text-sm mb-10">
+        Documentación para entender cada pantalla, cada decisión operativa y cada alarma.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <%# Tour card %>
+        <div class="bg-white rounded-2xl border border-indigo-200 p-8 flex flex-col shadow-sm hover:shadow-md transition">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-3xl">🗺️</span>
+            <h3 class="text-lg font-bold text-gray-900">Tour de la aplicación</h3>
+          </div>
+          <p class="text-sm text-gray-600 mb-2 leading-relaxed">
+            Recorrido por cada área del panel: Dashboard, Reglas, Auditoría, Blacklist, Templates y DLQ.
+          </p>
+          <ul class="text-sm text-gray-500 mb-6 space-y-1 list-none">
+            <li>✓ Propósito de cada pantalla</li>
+            <li>✓ Roles con acceso</li>
+            <li>✓ Acciones típicas con datos de seed</li>
+            <li>✓ Qué observar en pantalla</li>
+          </ul>
+          <%= link_to app_tour_url, target: "_blank", rel: "noopener",
+                class: "mt-auto inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition w-fit" do %>
+            Ver tour completo
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          <% end %>
+        </div>
+
+        <%# Runbook card %>
+        <div class="bg-white rounded-2xl border border-amber-200 p-8 flex flex-col shadow-sm hover:shadow-md transition">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-3xl">📋</span>
+            <h3 class="text-lg font-bold text-gray-900">Runbook operativo</h3>
+          </div>
+          <p class="text-sm text-gray-600 mb-2 leading-relaxed">
+            Guía de respuesta a incidentes con síntomas, diagnóstico y remediación paso a paso.
+          </p>
+          <ul class="text-sm text-gray-500 mb-6 space-y-1 list-none">
+            <li>✓ DLQ saturada — pasos de triage</li>
+            <li>✓ Bounce rate alto — consultas de diagnóstico</li>
+            <li>✓ SendGrid caído — modo degradado</li>
+            <li>✓ Alarmas recomendadas con umbrales</li>
+          </ul>
+          <%= link_to runbook_url, target: "_blank", rel: "noopener",
+                class: "mt-auto inline-flex items-center gap-2 bg-amber-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-amber-600 transition w-fit" do %>
+            Abrir runbook
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          <% end %>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
   <%# ── Endpoints públicos ─────────────────────────────────────────────────── %>
-  <section class="max-w-5xl mx-auto px-6 pb-14 w-full">
+  <section class="max-w-5xl mx-auto px-6 py-14 w-full">
     <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Endpoints disponibles</h2>
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <table class="w-full text-sm">
@@ -83,20 +144,20 @@
           <tr class="hover:bg-gray-50">
             <td class="px-6 py-3 font-mono text-indigo-600">GET</td>
             <td class="px-6 py-3 font-mono">/metrics</td>
-            <td class="px-6 py-3 text-gray-600">Métricas Prometheus (queue depth, bounce rate, etc.)</td>
+            <td class="px-6 py-3 text-gray-600">Métricas Prometheus (profundidad de cola, tasa de rebote, etc.)</td>
             <td class="px-6 py-3 text-gray-500">Basic Auth</td>
           </tr>
           <tr class="hover:bg-gray-50">
             <td class="px-6 py-3 font-mono text-green-600">POST</td>
             <td class="px-6 py-3 font-mono">/internal/ingest</td>
-            <td class="px-6 py-3 text-gray-600">Ingesta programática (load test / integraciones internas)</td>
+            <td class="px-6 py-3 text-gray-600">Ingesta programática (carga de prueba / integraciones internas)</td>
             <td class="px-6 py-3 text-gray-500">Basic Auth</td>
           </tr>
           <tr class="hover:bg-gray-50">
             <td class="px-6 py-3 font-mono text-green-600">POST</td>
             <td class="px-6 py-3 font-mono">/webhooks/sendgrid</td>
-            <td class="px-6 py-3 text-gray-600">Receptor de eventos de SendGrid (bounces, clicks, etc.)</td>
-            <td class="px-6 py-3 text-gray-500">Signature</td>
+            <td class="px-6 py-3 text-gray-600">Receptor de eventos de SendGrid (rebotes, clics, etc.)</td>
+            <td class="px-6 py-3 text-gray-500">Firma digital</td>
           </tr>
         </tbody>
       </table>
@@ -104,16 +165,16 @@
   </section>
 
   <%# ── Footer ─────────────────────────────────────────────────────────────── %>
-  <footer class="mt-auto border-t border-gray-200 bg-white py-8 px-6 text-center text-sm text-gray-500">
+  <footer class="mt-auto border-t border-gray-200 bg-white py-6 px-6 text-center text-sm text-gray-500">
     <div class="flex flex-wrap justify-center gap-6">
       <%= link_to "Repositorio", repo_url, target: "_blank", rel: "noopener",
             class: "hover:text-indigo-600 transition" %>
-      <%= link_to "Tour de la aplicación", app_tour_url, target: "_blank", rel: "noopener",
+      <%= link_to "Tour", app_tour_url, target: "_blank", rel: "noopener",
             class: "hover:text-indigo-600 transition" %>
-      <%= link_to "Runbook operativo", runbook_url, target: "_blank", rel: "noopener",
+      <%= link_to "Runbook", runbook_url, target: "_blank", rel: "noopener",
             class: "hover:text-indigo-600 transition" %>
     </div>
-    <p class="mt-4 text-gray-400">Central de Notificaciones &copy; <%= Time.current.year %></p>
+    <p class="mt-3 text-gray-400">Central de Notificaciones &copy; <%= Time.current.year %></p>
   </footer>
 
 </div>

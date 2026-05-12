@@ -1,14 +1,16 @@
 <h2 class="text-xl font-semibold text-gray-800 mb-6">Dashboard</h2>
 
 <div data-section="counters" class="grid grid-cols-2 gap-4 mb-6">
-  <div class="bg-white rounded-xl border border-gray-200 p-6 text-center">
-    <div class="text-4xl font-bold text-gray-900"><%= @snapshot[:queue_depth] %></div>
+  <%= link_to admin_audits_path(status: "enqueued"), class: "bg-white rounded-xl border border-gray-200 p-6 text-center hover:border-indigo-300 hover:shadow-sm transition group" do %>
+    <div class="text-4xl font-bold text-gray-900 group-hover:text-indigo-600 transition"><%= @snapshot[:queue_depth] %></div>
     <div class="text-sm text-gray-500 mt-1">Cola pendiente</div>
-  </div>
-  <div class="bg-white rounded-xl border border-gray-200 p-6 text-center">
+    <div class="text-xs text-indigo-400 mt-2 opacity-0 group-hover:opacity-100 transition">Ver en auditoría →</div>
+  <% end %>
+  <%= link_to admin_dlq_index_path, class: "bg-white rounded-xl border border-gray-200 p-6 text-center hover:border-red-300 hover:shadow-sm transition group" do %>
     <div class="text-4xl font-bold text-red-600"><%= @snapshot[:dlq_depth] %></div>
     <div class="text-sm text-gray-500 mt-1">Cola de errores (DLQ)</div>
-  </div>
+    <div class="text-xs text-red-400 mt-2 opacity-0 group-hover:opacity-100 transition">Ir a DLQ →</div>
+  <% end %>
 </div>
 
 <div class="grid grid-cols-3 gap-4 mb-6">
@@ -28,11 +30,15 @@
   <% if @snapshot[:error_rate].empty? %>
     <p class="text-sm text-gray-400">Sin errores registrados.</p>
   <% else %>
-    <%= render "shared/table", headers: ["Tipo", "Fallos"] do %>
+    <%= render "shared/table", headers: ["Tipo", "Fallos", ""] do %>
       <% @snapshot[:error_rate].each do |type, count| %>
-        <tr>
+        <tr class="hover:bg-red-50 transition">
           <td class="px-4 py-2 text-sm text-gray-700"><%= type.presence || "(sin tipo)" %></td>
           <td class="px-4 py-2 text-sm font-semibold text-red-600 text-right"><%= count %></td>
+          <td class="px-4 py-2 text-right">
+            <%= link_to "Ver →", admin_audits_path(status: "failed", notification_type: type),
+                  class: "text-xs text-indigo-600 hover:text-indigo-800" %>
+          </td>
         </tr>
       <% end %>
     <% end %>

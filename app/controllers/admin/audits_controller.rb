@@ -50,8 +50,9 @@ module Admin
         source:         params[:source].presence,
         from:           params[:from].presence,
         to:             params[:to].presence,
-        reason:         params[:reason].presence,
-        rule_id:        params[:rule_id].presence,
+        reason:            params[:reason].presence,
+        rule_id:           params[:rule_id].presence,
+        notification_type: params[:notification_type].presence,
         page:           (params[:page] || 1).to_i,
         per_page:       (params[:per_page] || AuditSearch::DEFAULT_PER_PAGE).to_i
       }.compact

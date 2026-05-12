@@ -2,6 +2,8 @@
   <h2 class="text-xl font-semibold text-gray-800">Dead Letter Queue</h2>
 </div>
 
+<%= render "admin/shared/mock_data_button" %>
+
 <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
   <%= form_with url: admin_dlq_index_path, method: :get, local: true do |f| %>
     <div class="flex items-end gap-3">
@@ -92,7 +94,7 @@
 
         <% if group[:count] > group[:items].size %>
           <p class="px-5 py-2 text-xs text-gray-400 border-t border-gray-100">
-            Mostrando <%= group[:items].size %> de <%= group[:count] %>. Filtrá por motivo para ver más.
+            Mostrando <%= group[:items].size %> de <%= group[:count] %>. Filtra por motivo para ver más.
           </p>
         <% end %>
       </details>
