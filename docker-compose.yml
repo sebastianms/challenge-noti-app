@@ -1,5 +1,5 @@
 services:
-  postgres:
+  db:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: postgres
@@ -20,12 +20,12 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
     environment:
       RAILS_ENV: development
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/challenge_noti_app_development
-      DATABASE_URL_TEST: postgres://postgres:postgres@postgres:5432/challenge_noti_app_test
+      DATABASE_URL: postgres://postgres:postgres@db:5432/challenge_noti_app_development
+      DATABASE_URL_TEST: postgres://postgres:postgres@db:5432/challenge_noti_app_test
     ports:
       - "3000:3000"
     volumes:
@@ -33,20 +33,49 @@ services:
       - bundle_cache:/usr/local/bundle
     command: ["./bin/rails", "server", "-b", "0.0.0.0"]
 
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      RAILS_ENV: development
+      DATABASE_URL: postgres://postgres:postgres@db:5432/challenge_noti_app_development
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+    command: ["bin/rails", "worker:run[10,2]"]
+    restart: unless-stopped
+
   test:
     build:
       context: .
       dockerfile: Dockerfile.dev
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
     environment:
       RAILS_ENV: test
-      DATABASE_URL_TEST: postgres://postgres:postgres@postgres:5432/challenge_noti_app_test
+      DATABASE_URL_TEST: postgres://postgres:postgres@db:5432/challenge_noti_app_test
     volumes:
       - .:/rails
       - bundle_cache:/usr/local/bundle
     command: ["bundle", "exec", "rspec"]
+
+  k6:
+    image: grafana/k6
+    profiles:
+      - load-test
+    depends_on:
+      - app
+    environment:
+      BASE_URL: http://app:3000
+    volumes:
+      - ./specs/009-observability-perf-hardening/load:/scripts
+      - ./specs/009-observability-perf-hardening/reports:/reports
+    command: ["run", "--out", "json=/reports/out.json", "/scripts/scenario.js"]
 
 volumes:
   postgres_data:
