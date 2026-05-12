@@ -1,0 +1,41 @@
+<h2 style="margin-bottom:1.5rem;font-size:1.2rem;font-weight:600">Reglas de notificación</h2>
+
+<%= link_to "Nueva regla", new_admin_rule_path,
+      style: "display:inline-block;margin-bottom:1.5rem;padding:.45rem 1rem;background:#1a1a2e;color:#fff;border-radius:6px;font-size:.875rem;text-decoration:none" %>
+
+<% if @rules.empty? %>
+  <p style="color:#aaa;font-size:.9rem">Sin reglas configuradas.</p>
+<% else %>
+  <table style="width:100%;border-collapse:collapse;font-size:.875rem;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden">
+    <thead>
+      <tr style="background:#f8f8fc;border-bottom:2px solid #eee">
+        <th style="text-align:left;padding:.6rem .75rem;color:#555">Tipo</th>
+        <th style="text-align:center;padding:.6rem .75rem;color:#555">Activa</th>
+        <th style="text-align:left;padding:.6rem .75rem;color:#555">Prioridad</th>
+        <th style="text-align:right;padding:.6rem .75rem;color:#555">Max/día</th>
+        <th style="text-align:right;padding:.6rem .75rem;color:#555">Cooldown (s)</th>
+        <th style="padding:.6rem .75rem"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @rules.each do |rule| %>
+        <tr style="border-bottom:1px solid #f0f0f0">
+          <td style="padding:.55rem .75rem;font-weight:500"><%= rule.notification_type %></td>
+          <td style="padding:.55rem .75rem;text-align:center"><%= rule.enabled? ? "✓" : "—" %></td>
+          <td style="padding:.55rem .75rem"><%= rule.priority.presence || "—" %></td>
+          <td style="padding:.55rem .75rem;text-align:right"><%= rule.max_per_day || "—" %></td>
+          <td style="padding:.55rem .75rem;text-align:right"><%= rule.cooldown_seconds || "—" %></td>
+          <td style="padding:.55rem .75rem;text-align:right;white-space:nowrap">
+            <%= link_to "Editar", edit_admin_rule_path(rule), style: "margin-right:.5rem;color:#1a1a2e" %>
+            <%= link_to "Historial", history_admin_rule_path(rule), style: "margin-right:.5rem;color:#555" %>
+            <%= button_to "Eliminar", admin_rule_path(rule), method: :delete,
+                  form: { data: { turbo_confirm: "¿Eliminar esta regla?" } },
+                  style: "background:none;border:none;color:#c0392b;cursor:pointer;padding:0;font-size:.875rem" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<%= render "admin/shared/mock_data_button" %>

@@ -1,0 +1,42 @@
+<h2 style="margin-bottom:.5rem;font-size:1.2rem;font-weight:600">Historial: <%= @rule.notification_type %></h2>
+<%= link_to "← Volver a reglas", admin_rules_path, style: "font-size:.85rem;color:#555;display:inline-block;margin-bottom:1.5rem" %>
+
+<% if @changes.empty? %>
+  <p style="color:#aaa;font-size:.9rem">Sin cambios registrados.</p>
+<% else %>
+  <% @changes.each do |change| %>
+    <div style="background:#fff;padding:1.25rem 1.5rem;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+        <span style="font-weight:600;font-size:.875rem;color:<%= change.action == 'deleted' ? '#c0392b' : (change.action == 'created' ? '#27ae60' : '#1a1a2e') %>">
+          <%= change.action.upcase %>
+        </span>
+        <span style="font-size:.8rem;color:#888">
+          <%= change.admin_user&.email %> · <%= change.changed_at.strftime("%d/%m/%Y %H:%M") %>
+        </span>
+      </div>
+
+      <% all_keys = ((change.before&.keys || []) | (change.after&.keys || [])).sort %>
+      <% if all_keys.any? %>
+        <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+          <thead>
+            <tr style="border-bottom:1px solid #eee">
+              <th style="text-align:left;padding:.3rem .5rem;color:#666;width:30%">Campo</th>
+              <th style="text-align:left;padding:.3rem .5rem;color:#666">Antes</th>
+              <th style="text-align:left;padding:.3rem .5rem;color:#666">Después</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% all_keys.each do |key| %>
+              <% row = diff_row(change.before, change.after, key) %>
+              <tr style="border-bottom:1px solid #f5f5f5<%= ';background:#fffbe6' if row[:changed] %>">
+                <td style="padding:.3rem .5rem;color:#444"><%= key %></td>
+                <td style="padding:.3rem .5rem;color:<%= row[:changed] ? '#c0392b' : '#666' %>"><%= row[:before].inspect %></td>
+                <td style="padding:.3rem .5rem;color:<%= row[:changed] ? '#27ae60' : '#666' %>"><%= row[:after].inspect %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
