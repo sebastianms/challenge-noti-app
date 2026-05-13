@@ -69,7 +69,7 @@ La UI Admin es la **cara visible del producto** y se implementa como un módulo 
 
 **Pantallas principales:**
 
-**1\. Dashboard general** — vista 360° del producto. Volumen de envíos por tipo y canal, tasa de filtrado por spam, **estimación de ahorro de costos** (llamadas a Sendgrid evitadas por consolidación), salud del sistema (queue depth, DLQ, error rate). Para stakeholders: comunicar impacto a stakeholders. Para líderes técnicos: detección temprana de anomalías.
+**1\. Dashboard general** — vista 360° del producto. Volumen de envíos por tipo y canal, tasa de filtrado por spam, salud del sistema (queue depth, DLQ, error rate). Para stakeholders: comunicar impacto a stakeholders. Para líderes técnicos: detección temprana de anomalías.
 
 **2\. Gestión de reglas** (satisface R5). Lista de tipos de notificación (WelcomeNotification, CommentNotification, etc.) editables: canales habilitados, frecuencia máxima por usuario/día, cooldown, política de agrupación, prioridad. *Caso típico:* un stakeholder autorizado reduce la frecuencia de marketing de 3/día a 1/día y activa resumen semanal — desde la UI, sin código ni deploys..
 
@@ -97,7 +97,7 @@ EmailChannel integra la API HTTP de Sendgrid mapeando title → subject y body �
 Cuando un envío falla (timeout, error 5xx de Sendgrid, red no disponible), el worker aplica **backoff exponencial**: reintenta tras 1 min, luego 5 min, luego 25 min. Si los tres intentos fallan, el mensaje se mueve a la **Dead Letter Queue (DLQ)** (registrada en la tabla dispatch\_queue con status \= 'failed') donde queda en espera de revision humana. Ningún mensaje se pierde silenciosamente: todo lo que llega a la DLQ queda visible en la pantalla de **Operaciones/DLQ** de la UI Admin, con el motivo del fallo, el payload completo y tres acciones disponibles: reintento individual, reintento masivo (útil para evacuar la cola tras un outage de Sendgrid) y descarte con motivo registrado en auditoría.  
 Cuando Sendgrid reporta un **hard bounce** (dirección de email inválida o inexistente) vía webhook, el sistema auto-agrega al destinatario a la blacklist con motivo hard\_bounce, evitando futuros intentos de envío a esa dirección.
 
-**E. Auditoría transversal.** Cada transición (received → validated → enqueued → dispatched → delivered/failed/filtered) se persiste en notification\_audit con payload y metadata en **JSONB \+ índices GIN** para consultas, y un **snapshot** de la regla aplicada. La tabla está **particionada por día**: la purga es un DROP TABLE (operación de metadatos, instantánea, sin Vacuum), evitando degradación de la performance.
+**E. Auditoría transversal.** Cada transición (received → validated → enqueued → dispatched → delivered/failed/filtered) se persiste en notification\_audit con payload y metadata en **JSONB \+ índices GIN** para consultas, y un **snapshot** de la regla aplicada. La tabla está **particionada por mes**: la purga es un DROP TABLE (operación de metadatos, instantánea, sin Vacuum), evitando degradación de la performance.
 
 ## **2.4. Diagrama de arquitectura de software**
 
@@ -137,7 +137,7 @@ Cuando Sendgrid reporta un **hard bounce** (dirección de email inválida o inex
 | \# | Riesgo | Mitigación | Costo-beneficio |
 | :---- | :---- | :---- | :---- |
 | R-01 | Postgres como cuello de botella a 3-5x el volumen actual. | \-Bloqueo Pesimista usando SKIP LOCKED\-Particionamiento \-Roadmap Evolutivo → Kafka/SQS/RabitMQ sin afectar a los 25 equipos. | Costo bajo, Alto Valor  |
-| R-02 | Muchos registros/día en tabla de auditoría \- DELETE masivos fragmentan e indexan mal. | Range partitioning declarativo diario \+ retención por DROP TABLE (sin Vacuum). | Costo bajo, Alto Valor |
+| R-02 | Muchos registros/día en tabla de auditoría \- DELETE masivos fragmentan e indexan mal. | Range partitioning declarativo mensual \+ retención por DROP TABLE (sin Vacuum). | Costo bajo, Alto Valor |
 | **R-03** | Cache de reglas (TTL 5 min entre nodos) puede **afectar la consistencia**. | Trade-off aceptado a favor de latencia \<50 ms. Documentado en UI Admin. | Aceptado.Costo bajo / Alto Valor. |
 | R-04 | Caída del proveedor (Sendgrid). | DLQ \+ backoff exponencial. | Costo medio, Alto Valor |
 | R-05 | Acoplamiento al monolito. | Rollout con feature flags por equipo \+ observabilidad granular. Roadmap: extraer a microservicio exclusivo de Notificaciones. | Costo Alto, Alto Valor |
