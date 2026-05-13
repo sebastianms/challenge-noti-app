@@ -53,6 +53,7 @@ module Admin
         reason:            params[:reason].presence,
         rule_id:           params[:rule_id].presence,
         notification_type: params[:notification_type].presence,
+        subject:           params[:subject].presence,
         page:           (params[:page] || 1).to_i,
         per_page:       (params[:per_page] || AuditSearch::DEFAULT_PER_PAGE).to_i
       }.compact

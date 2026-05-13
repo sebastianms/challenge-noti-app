@@ -9,7 +9,8 @@ class AuditSearch
   end
 
   def initialize(correlation_id: nil, recipient: nil, status: nil, from: nil, to: nil, source: nil,
-                 reason: nil, rule_id: nil, notification_type: nil, page: 1, per_page: DEFAULT_PER_PAGE)
+                 reason: nil, rule_id: nil, notification_type: nil, subject: nil,
+                 page: 1, per_page: DEFAULT_PER_PAGE)
     @correlation_id    = correlation_id
     @recipient         = recipient
     @status            = status
@@ -19,6 +20,7 @@ class AuditSearch
     @reason            = reason
     @rule_id           = rule_id&.to_i.presence
     @notification_type = notification_type
+    @subject           = subject
     @page              = [ page.to_i, 1 ].max
     @per_page          = [ [ per_page.to_i, 1 ].max, MAX_PER_PAGE ].min
   end
@@ -48,6 +50,7 @@ class AuditSearch
     scope = scope.where("metadata->>'reason' = ?", @reason)           if @reason.present?
     scope = scope.where("(metadata->>'rule_id')::int = ?", @rule_id)  if @rule_id.present?
     scope = scope.where(notification_type: @notification_type)        if @notification_type.present?
+    scope = scope.where("payload::text ILIKE ?", "%#{@subject}%")    if @subject.present?
 
     total = scope.count
     items = scope.order(created_at: :desc).limit(@per_page).offset((@page - 1) * @per_page).to_a
