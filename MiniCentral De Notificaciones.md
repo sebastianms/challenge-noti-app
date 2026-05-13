@@ -261,14 +261,14 @@ Al cerrar feature 009 (Phase 10 del roadmap — Polish: Observabilidad, performa
 | Tasks ejecutadas | 362 sobre 362 (39 + 36 + 46 + 45 + 40 + 50 + 23 + 33 + 50) |
 | Specs en `specs/` | 9 features × (spec + plan + research + data-model + contracts + quickstart + tasks) ≈ 64 documentos |
 | ADLs documentados | 17 (ADL-015: metrics endpoint Prometheus · ADL-016: Tailwind CDN admin · ADL-017: Docker Compose como entorno primario) |
-| Tests RSpec | 668 ejemplos · 99.26% de líneas (1072/1080) |
-| Lint warnings | 0 en ~210 archivos Ruby |
+| Tests RSpec | 701 ejemplos · 99.03% de líneas (1121/1132) |
+| Lint warnings | 0 en ~222 archivos Ruby |
 | Brakeman + bundler-audit | 0 issues (Devise actualizado de 4.9.4 a 5.0.4 por CVE-2026-32700) |
 | Benchmark SC-002 (audit query) | p95 = 2.19 ms con 10 000 audits (target ≤ 2 000 ms) ✅ |
 | Benchmark SC-005 (blacklist eval) | p95 = 1.4 ms con 100 000 filas (target ≤ 5 ms) ✅ |
 | Load test 140 rps (US2) | p95 = 2 017 ms · 0% error rate · 34 609 iteraciones en 5 min ❌ FAIL latencia — cuello de botella: entorno dev local, proceso único sin worker pool. Infra, no diseño. |
 | Documentación operacional | `docs/runbook.md` (5 escenarios) + `docs/app-tour.md` (7 secciones) — accesibles desde home y sidebar del panel |
-| Commits | ~86, agrupados por bloque y feature |
+| Commits | ~109, agrupados por bloque y feature |
 | Tiempo aproximado | 9 sesiones de trabajo intensivo, sin retrabajo significativo |
 
 La métrica más relevante para SDD no es ninguna de esas: es **cero retrabajo de spec**. Ningún `spec.md` lo reescribimos tras empezar a implementar. Las clarificaciones las atajamos en la fase Clarify; los trade-offs no obvios los dejamos como ADL. Los bugs que encontramos durante implementación fueron de código, no de diseño.
