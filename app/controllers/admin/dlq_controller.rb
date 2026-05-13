@@ -6,8 +6,27 @@ module Admin
 
     def index
       @reason_filter = params[:reason].presence
-      @groups = Admin::DlqQuery.grouped_by_reason(reason_filter: @reason_filter)
+      @groups        = Admin::DlqQuery.grouped_by_reason(reason_filter: @reason_filter)
+      @error_summary = build_error_summary
     end
+
+    def build_error_summary
+      counts = DispatchQueue.where(status: "failed")
+                            .group(:failed_reason)
+                            .count
+
+      summary = { timeout: 0, rate_limit: 0, refused: 0, other: 0 }
+      counts.each do |reason, count|
+        case reason.to_s
+        when /Timeout|timeout|OpenTimeout|ReadTimeout/ then summary[:timeout]    += count
+        when /429|RateLimit|rate.limit/i               then summary[:rate_limit] += count
+        when /ECONNREFUSED|Connection refused/i        then summary[:refused]    += count
+        else                                                summary[:other]      += count
+        end
+      end
+      summary.merge(total: summary.values.sum)
+    end
+    private :build_error_summary
 
     def retry
       job = DispatchQueue.find(params[:id])

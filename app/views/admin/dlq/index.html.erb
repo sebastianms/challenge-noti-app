@@ -4,6 +4,22 @@
 
 <%= render "admin/shared/mock_data_button" %>
 
+<% if @error_summary[:total] > 0 %>
+  <div class="grid grid-cols-4 gap-3 mb-4">
+    <% [
+      { label: "Timeouts",         key: :timeout,    color: "amber"  },
+      { label: "Rate limit (429)", key: :rate_limit, color: "orange" },
+      { label: "Conn. refused",    key: :refused,    color: "red"    },
+      { label: "Otros",            key: :other,      color: "gray"   }
+    ].each do |item| %>
+      <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+        <div class="text-2xl font-bold text-<%= item[:color] %>-600"><%= @error_summary[item[:key]] %></div>
+        <div class="text-xs text-gray-500 mt-1"><%= item[:label] %></div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
 <div class="bg-white rounded-xl border border-gray-200 p-4 mb-4">
   <%= form_with url: admin_dlq_index_path, method: :get, local: true do |f| %>
     <div class="flex items-end gap-3">
