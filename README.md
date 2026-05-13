@@ -28,7 +28,7 @@ docker compose up -d postgres
 # 3. Crear base de datos y migrar
 docker compose run --rm test bin/rails db:create db:migrate
 
-# 4. (Opcional) Cargar datos de seed
+# 4. (Opcional) Cargar datos de seed con cuentas para iniciar sesion
 docker compose exec app bin/rails db:seed
 
 # 5. Verificar que la suite pasa
