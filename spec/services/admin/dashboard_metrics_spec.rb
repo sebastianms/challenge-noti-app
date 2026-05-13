@@ -9,7 +9,7 @@ RSpec.describe Admin::DashboardMetrics, type: :service do
 
   describe "#snapshot keys" do
     it "returns all expected keys" do
-      expect(service.snapshot.keys).to match_array(%i[volume filter_rate error_rate queue_depth dlq_depth])
+      expect(service.snapshot.keys).to match_array(%i[volume filter_rate error_rate queue_depth dlq_depth volume_by_type volume_by_channel])
     end
   end
 

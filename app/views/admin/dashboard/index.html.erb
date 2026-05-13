@@ -25,6 +25,36 @@
   </div>
 </div>
 
+<div class="grid grid-cols-2 gap-4 mb-6">
+  <div data-section="volume-by-type" class="bg-white rounded-xl border border-gray-200 p-6">
+    <h3 class="text-sm font-semibold text-gray-700 mb-4">Envíos por tipo (últimos 7 días)</h3>
+    <% if @snapshot[:volume_by_type].empty? %>
+      <p class="text-sm text-gray-400">Sin datos.</p>
+    <% else %>
+      <div class="space-y-2">
+        <% max = @snapshot[:volume_by_type].values.max.to_f %>
+        <% @snapshot[:volume_by_type].sort_by { |_, v| -v }.each do |type, count| %>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-600 w-40 truncate"><%= type %></span>
+            <div class="flex-1 bg-gray-100 rounded-full h-2">
+              <div class="bg-indigo-500 h-2 rounded-full" style="width: <%= (count / max * 100).round %>%"></div>
+            </div>
+            <span class="text-xs font-semibold text-gray-700 w-8 text-right"><%= count %></span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+  <div data-section="volume-by-channel" class="bg-white rounded-xl border border-gray-200 p-6">
+    <h3 class="text-sm font-semibold text-gray-700 mb-4">Envíos por canal (últimos 7 días)</h3>
+    <% if @snapshot[:volume_by_channel].empty? %>
+      <p class="text-sm text-gray-400">Sin datos.</p>
+    <% else %>
+      <%= pie_chart @snapshot[:volume_by_channel], height: "160px", colors: ["#4f46e5", "#06b6d4", "#f97316"] %>
+    <% end %>
+  </div>
+</div>
+
 <div data-section="error-rate" class="bg-white rounded-xl border border-gray-200 p-6">
   <h3 class="text-sm font-semibold text-gray-700 mb-4">Errores por tipo de notificación</h3>
   <% if @snapshot[:error_rate].empty? %>
