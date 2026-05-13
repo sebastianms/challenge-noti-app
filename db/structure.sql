@@ -272,6 +272,40 @@ CREATE TABLE public.notification_events_default (
 
 
 --
+-- Name: notification_rollout_flags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notification_rollout_flags (
+    id bigint NOT NULL,
+    notification_type character varying NOT NULL,
+    team_name character varying NOT NULL,
+    enrolled boolean DEFAULT true NOT NULL,
+    notes text,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: notification_rollout_flags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notification_rollout_flags_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notification_rollout_flags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notification_rollout_flags_id_seq OWNED BY public.notification_rollout_flags.id;
+
+
+--
 -- Name: notification_rules; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -521,6 +555,13 @@ ALTER TABLE ONLY public.notification_events ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: notification_rollout_flags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_rollout_flags ALTER COLUMN id SET DEFAULT nextval('public.notification_rollout_flags_id_seq'::regclass);
+
+
+--
 -- Name: notification_rules id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -649,6 +690,14 @@ ALTER TABLE ONLY public.notification_events
 
 ALTER TABLE ONLY public.notification_events_default
     ADD CONSTRAINT notification_events_default_pkey PRIMARY KEY (id, idempotency_window_ts);
+
+
+--
+-- Name: notification_rollout_flags notification_rollout_flags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notification_rollout_flags
+    ADD CONSTRAINT notification_rollout_flags_pkey PRIMARY KEY (id);
 
 
 --
@@ -810,6 +859,20 @@ CREATE UNIQUE INDEX index_admin_users_on_reset_password_token ON public.admin_us
 --
 
 CREATE UNIQUE INDEX index_admin_users_on_unlock_token ON public.admin_users USING btree (unlock_token);
+
+
+--
+-- Name: index_notification_rollout_flags_on_enrolled; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notification_rollout_flags_on_enrolled ON public.notification_rollout_flags USING btree (enrolled);
+
+
+--
+-- Name: index_notification_rollout_flags_on_notification_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_notification_rollout_flags_on_notification_type ON public.notification_rollout_flags USING btree (notification_type);
 
 
 --
@@ -1087,6 +1150,7 @@ ALTER TABLE ONLY public.rule_changes
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260513100000'),
 ('20260513000002'),
 ('20260513000001'),
 ('20260512170000'),

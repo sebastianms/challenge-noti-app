@@ -1,0 +1,33 @@
+<h2 class="text-xl font-semibold text-gray-800 mb-6">Nuevo flag de rollout</h2>
+
+<div class="bg-white rounded-xl border border-gray-200 p-6 max-w-lg">
+  <%= render "shared/form_errors", object: @flag %>
+
+  <%= form_with model: @flag, url: admin_rollout_flags_path, local: true, class: "space-y-4" do |f| %>
+    <div>
+      <%= f.label :notification_type, "Tipo de notificación", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :notification_type, placeholder: "ej: password_reset",
+            class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
+    </div>
+    <div>
+      <%= f.label :team_name, "Equipo", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :team_name, placeholder: "ej: Plataforma, Crecimiento",
+            class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
+    </div>
+    <div class="flex items-center gap-3">
+      <%= f.check_box :enrolled, class: "h-4 w-4 text-indigo-600 border-gray-300 rounded" %>
+      <%= f.label :enrolled, "Activo (enrolled)", class: "text-sm font-medium text-gray-700" %>
+    </div>
+    <div>
+      <%= f.label :notes, "Notas", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_area :notes, rows: 2, placeholder: "Contexto del rollout, fecha estimada de activación…",
+            class: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" %>
+    </div>
+    <%= f.submit "Crear flag",
+          class: "px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition cursor-pointer" %>
+  <% end %>
+</div>
+
+<div class="mt-4">
+  <%= link_to "Volver", admin_rollout_flags_path, class: "text-sm text-indigo-600 hover:text-indigo-800" %>
+</div>

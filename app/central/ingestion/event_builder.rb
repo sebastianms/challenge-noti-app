@@ -18,6 +18,8 @@ class EventBuilder
     normalized = RecipientNormalizer.normalize(@recipient_input)
 
     type_id    = @notification_class.resolved_notification_type
+
+    return SendResult.rejected(reason: "not_enrolled") unless NotificationRolloutFlag.enrolled?(type_id)
     window     = @notification_class.resolved_idempotency_window
     window_ts  = floor_to_window(Time.current.utc, window)
     context_id = extract_context_id(@context)

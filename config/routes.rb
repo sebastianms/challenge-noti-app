@@ -35,6 +35,7 @@ Rails.application.routes.draw do
       member     { post :retry; post :discard }
       collection { post :bulk_retry }
     end
+    resources :rollout_flags, only: [ :index, :new, :create, :update, :destroy ]
   end
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)

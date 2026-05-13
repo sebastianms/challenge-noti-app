@@ -1,0 +1,43 @@
+<div class="flex items-center justify-between mb-6">
+  <h2 class="text-xl font-semibold text-gray-800">Feature flags de rollout</h2>
+  <%= link_to "Nuevo flag", new_admin_rollout_flag_path,
+        class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition" %>
+</div>
+
+<p class="text-sm text-gray-500 mb-4">
+  Controla qué tipos de notificación pasan por la Central. Si un tipo <strong>no está registrado</strong>,
+  se procesa normalmente. Si está registrado con <strong>enrolled = false</strong>, se rechaza en la ingesta.
+</p>
+
+<% if @flags.empty? %>
+  <p class="text-sm text-gray-400">No hay flags configurados. Todos los tipos están activos.</p>
+<% else %>
+  <%= render "shared/table", headers: ["Tipo de notificación", "Equipo", "Estado", "Notas", ""] do %>
+    <% @flags.each do |flag| %>
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-2 text-sm font-mono text-gray-800"><%= flag.notification_type %></td>
+        <td class="px-4 py-2 text-sm text-gray-600"><%= flag.team_name %></td>
+        <td class="px-4 py-2">
+          <% if flag.enrolled? %>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Activo</span>
+          <% else %>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">Inactivo</span>
+          <% end %>
+        </td>
+        <td class="px-4 py-2 text-sm text-gray-500 max-w-xs truncate"><%= flag.notes %></td>
+        <td class="px-4 py-2 text-sm whitespace-nowrap">
+          <div class="flex items-center gap-3">
+            <%= button_to flag.enrolled? ? "Desactivar" : "Activar",
+                  admin_rollout_flag_path(flag),
+                  method: :patch,
+                  params: { notification_rollout_flag: { enrolled: !flag.enrolled? } },
+                  class: flag.enrolled? ? "text-xs text-amber-600 hover:text-amber-800" : "text-xs text-green-600 hover:text-green-800" %>
+            <%= button_to "Eliminar", admin_rollout_flag_path(flag), method: :delete,
+                  data: { confirm: "¿Eliminar flag de #{flag.notification_type}?" },
+                  class: "btn-danger text-xs bg-transparent border-none cursor-pointer text-red-600 hover:text-red-800" %>
+          </div>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
+<% end %>
