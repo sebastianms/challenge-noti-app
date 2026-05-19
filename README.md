@@ -285,18 +285,127 @@ NotificationAudit.find_by(correlation_id: params[:correlation_id])
 
 ### Agregar un canal nuevo
 
+El registro de canales (`ChannelRegistry`) desacopla el core de ingesta del proveedor de entrega. Para integrar un canal nuevo se necesitan cuatro pasos.
+
+#### Ejemplo completo: canal SMS
+
+**1. Implementar la clase del canal**
+
+Crea `app/central/channels/sms_channel.rb`:
+
 ```ruby
 # app/central/channels/sms_channel.rb
 class SmsChannel < ChannelStrategy
   def deliver(event, recipient_id, correlation_id:)
-    # implementación...
+    # recipient_id debe ser un número de teléfono en formato E.164 (+56912345678)
+    raise ArgumentError, "recipient_id must be a phone number, got: #{recipient_id.inspect}" unless recipient_id.to_s.match?(/\A\+\d{7,15}\z/)
+
+    payload = event.payload || {}
+    message = payload["body"] || payload["title"] || "(sin contenido)"
+
+    # Llama aquí al SDK de tu proveedor (Twilio, AWS SNS, etc.)
+    # TwilioClient.messages.create(to: recipient_id, from: ENV["SMS_FROM"], body: message)
+
+    Rails.logger.info("[SmsChannel] SMS enviado a #{recipient_id} | corr=#{correlation_id}")
     :delivered
+  rescue TwilioError => e
+    raise PermanentError, "Twilio permanent failure: #{e.message}" if e.code.in?([21211, 21610])
+    raise TransientError, "Twilio transient error: #{e.message}"
   end
 
   def channel_name = "sms"
 end
+
 ChannelRegistry.register(:sms, SmsChannel.new)
 ```
+
+Variables de entorno necesarias (agregar a `.env` y a los secrets de producción):
+
+| Variable | Descripción |
+|----------|-------------|
+| `TWILIO_ACCOUNT_SID` | SID de la cuenta Twilio |
+| `TWILIO_AUTH_TOKEN` | Token de autenticación |
+| `SMS_FROM` | Número remitente en formato E.164 (`+15005550006`) |
+
+**2. Crear la clase de notificación**
+
+Crea `app/notifications/sms_alert_notification.rb`:
+
+```ruby
+class SmsAlertNotification < AbstractNotification
+  notification_type "sms_alert"
+  idempotency_window 10.minutes
+
+  def self.title(context = {})
+    "Alerta: #{context[:event]}"
+  end
+
+  def self.body(context = {})
+    "#{context[:event]} detectado a las #{context[:timestamp]}. Ref: #{context[:id]}."
+  end
+end
+```
+
+**3. Apuntar el worker al canal correcto**
+
+El worker actual despacha siempre por `:email`. Para enrutar por canal necesitas derivar el canal desde la regla o el evento. La forma más directa mientras el sistema despacha a un único canal por tipo:
+
+Edita `app/central/broker/worker.rb`, método `process_job`:
+
+```ruby
+# Antes:
+ChannelRegistry.for(:email).deliver(event, event.recipient_canonical, correlation_id: event.correlation_id)
+
+# Después (enrutamiento por regla):
+rule    = NotificationRule.find_by(notification_type: event.notification_type)
+channel = rule&.channels&.first || "email"
+ChannelRegistry.for(channel.to_sym).deliver(event, event.recipient_canonical, correlation_id: event.correlation_id)
+```
+
+> **Nota**: si un tipo de notificación puede enviarse por múltiples canales simultáneamente, el worker debe iterar sobre `rule.channels` y crear un `dispatch_queue` separado por canal. Eso requiere un cambio mayor en el esquema de la cola.
+
+**4. Crear la regla que activa el canal SMS**
+
+En el panel admin (`/admin/rules`) o via consola:
+
+```ruby
+NotificationRule.create!(
+  notification_type: "sms_alert",
+  channels:          ["sms"],   # restringe el despacho exclusivamente a SMS
+  max_per_day:       5,
+  cooldown_seconds:  120,
+  priority:          "critical",
+  enabled:           true
+)
+```
+
+**5. (Opcional) Template para el cuerpo del SMS**
+
+```ruby
+NotificationTemplate.create!(
+  notification_type: "sms_alert",
+  channel:           "sms",
+  subject:           nil,   # los SMS no tienen asunto
+  body:              "ALERTA {{event}} a las {{timestamp}}. Ref: {{id}}."
+)
+```
+
+**6. Probar el envío**
+
+```bash
+docker compose exec app bin/rails console
+```
+
+```ruby
+result = SmsAlertNotification.send(
+  "+56912345678",
+  context: { event: "CPU alta", timestamp: Time.current.iso8601, id: "host-01" }
+)
+result.state           # => :created
+result.correlation_id  # => "corr-..."
+```
+
+Verifica en `/admin/audits` que aparece el registro con `status: dispatched` y `channel: sms`.
 
 ## Motor de reglas
 
